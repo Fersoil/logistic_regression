@@ -11,4 +11,4 @@
 3. [communities-and-crime-binary (128 features)](https://www.openml.org/search?type=data&sort=date&status=active&order=desc&qualities.NumberOfClasses=%3D_2&qualities.NumberOfFeatures=between_100_1000&id=43891)
 4. [SantanderCustomerSatisfaction (201 features)](https://www.openml.org/search?type=data&sort=date&status=active&order=desc&qualities.NumberOfClasses=%3D_2&qualities.NumberOfFeatures=between_100_1000&id=42435)
 5. [PolishCompaniesBancrupcy (64 features)](https://archive.ics.uci.edu/dataset/365/polish+companies+bankruptcy+data)
-6.
+6. [AIDS Clinical Trials (23 features)](https://archive.ics.uci.edu/dataset/890/aids+clinical+trials+group+study+175)
