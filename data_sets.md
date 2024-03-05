@@ -14,5 +14,5 @@
 4. [SantanderCustomerSatisfaction (201 features)](https://www.openml.org/search?type=data&sort=date&status=active&order=desc&qualities.NumberOfClasses=%3D_2&qualities.NumberOfFeatures=between_100_1000&id=42435)
 5. [PolishCompaniesBancrupcy (64 features)](https://archive.ics.uci.edu/dataset/365/polish+companies+bankruptcy+data)
 6. [AIDS Clinical Trials (23 features)](https://archive.ics.uci.edu/dataset/890/aids+clinical+trials+group+study+175)
-7.[Credit card Details Binary Classification Problem (17 features)](https://www.kaggle.com/datasets/rohitudageri/credit-card-details)
-8.[Heart Disease Health Indicators Dataset (21 features)](https://www.kaggle.com/datasets/alexteboul/heart-disease-health-indicators-dataset)
+7. [Credit card Details Binary Classification Problem (17 features)](https://www.kaggle.com/datasets/rohitudageri/credit-card-details)
+8. [Heart Disease Health Indicators Dataset (21 features)](https://www.kaggle.com/datasets/alexteboul/heart-disease-health-indicators-dataset)
