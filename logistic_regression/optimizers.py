@@ -6,7 +6,15 @@ from scipy.special import expit as sigmoid
 
 
 def mini_batch_gd(
-    X, y, initial_solution, calculate_gradient, learning_rate=0.01, max_num_epoch=1000, batch_size=1, batch_fraction=None, verbose=False
+    X,
+    y,
+    initial_solution,
+    calculate_gradient,
+    learning_rate=0.01,
+    max_num_epoch=1000,
+    batch_size=1,
+    batch_fraction=None,
+    verbose=False,
 ):
     """
     Performs mini batch gradient descent optimization.
@@ -45,13 +53,26 @@ def mini_batch_gd(
         shuffled_idx = np.random.permutation(N)
         X, y = X[shuffled_idx], y[shuffled_idx]
         for idx in range(iterations):
-            X_selected, y_selected = X[idx * batch_size : (idx + 1) * batch_size], y[idx * batch_size : (idx + 1) * batch_size]
+            X_selected, y_selected = (
+                X[idx * batch_size : (idx + 1) * batch_size],
+                y[idx * batch_size : (idx + 1) * batch_size],
+            )
             gradient = calculate_gradient(X_selected, y_selected, current_solution)
             current_solution = current_solution - learning_rate * gradient
-        print(f"Epoch {epoch}, solution:", current_solution)
+        if verbose:
+            print(f"Epoch {epoch}, solution:", current_solution)
     return current_solution
 
-def newton(X, y, initial_solution, calculate_gradient, calculate_hessian, max_num_epoch=1000, verbose=False):
+
+def newton(
+    X,
+    y,
+    initial_solution,
+    calculate_gradient,
+    calculate_hessian,
+    max_num_epoch=1000,
+    verbose=False,
+):
     """
     Performs Newton method optimization using second order derviatives
 
@@ -83,6 +104,7 @@ def newton(X, y, initial_solution, calculate_gradient, calculate_hessian, max_nu
         if verbose:
             print(f"Epoch {epoch}, solution:", current_solution)
     return current_solution
+
 
 def iwls(X, y, initial_solution, max_num_epoch=1000, verbose=False):
     """
@@ -116,8 +138,15 @@ def iwls(X, y, initial_solution, max_num_epoch=1000, verbose=False):
     return current_solution
 
 
-
-def sgd(X, y, initial_solution, calculate_gradient, learning_rate=0.01, max_num_epoch=1000, verbose=False):
+def sgd(
+    X,
+    y,
+    initial_solution,
+    calculate_gradient,
+    learning_rate=0.01,
+    max_num_epoch=1000,
+    verbose=False,
+):
     """
     Performs stochastic gradient descent optimization.
 
@@ -139,7 +168,7 @@ def sgd(X, y, initial_solution, calculate_gradient, learning_rate=0.01, max_num_
         X = X.to_numpy()
     if type(y) is pd.DataFrame:
         y = y.to_numpy().T
-    current_solution = initial_solution 
+    current_solution = initial_solution
 
     for epoch in range(max_num_epoch):
         N, _ = X.shape
@@ -151,7 +180,6 @@ def sgd(X, y, initial_solution, calculate_gradient, learning_rate=0.01, max_num_
         if verbose:
             print(f"Epoch {epoch}, solution: {current_solution}")
     return current_solution
-
 
 
 def adam(
@@ -225,11 +253,13 @@ def adam(
 
             # bias correction
             corrected_momentum = momentum / (1 - momentum_decay**counter)
-            corrected_squared_gradients = squared_gradients / (1 - squared_gradient_decay**counter)
+            corrected_squared_gradients = squared_gradients / (
+                1 - squared_gradient_decay**counter
+            )
 
             current_solution = current_solution - learning_rate * corrected_momentum / (
                 np.sqrt(corrected_squared_gradients) + epsilon
             )
-
-        print(f"Epoch {epoch}, solution:", current_solution)
+        if verbose:
+            print(f"Epoch {epoch}, solution:", current_solution)
     return current_solution
