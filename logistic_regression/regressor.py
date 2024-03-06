@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from sklearn.preprocessing import PolynomialFeatures
 
 from scipy.special import expit as sigmoid
@@ -20,6 +21,7 @@ class LogisticRegressor:
 
         self.descent_algorithm = descent_algorithm
         self.prob_threshold = prob_threshold
+        self.beta = None
 
     def random_init_weights(self, p):
         self.beta = np.random.standard_normal(p)
