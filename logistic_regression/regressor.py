@@ -82,25 +82,7 @@ class LogisticRegressor:
         if self.include_interactions:
             # initialize the weights
             self.random_init_weights(X.shape[1] + X.shape[1] * (X.shape[1] - 1) // 2)
-
-            # create the new column names
-            #! add "intercept" at the beginning of the list of column names when modifying
-            col_names_X = list(X.columns)
-            new_col_names = col_names_X.copy()
-            for idx, first_variable_name in enumerate(col_names_X):
-                for second_variable_name in col_names_X[idx + 1 :]:
-                    new_col_names.append(
-                        f"{first_variable_name}*{second_variable_name}"
-                    )
-
-            # create the interaction terms
-            #! for now without the intercept but its fairly easy to add,
-            #! removing include_bias=False created columns of 1s at the beginning of the dataframe
-            poly = PolynomialFeatures(
-                degree=2, interaction_only=True, include_bias=False
-            )
-            X = poly.fit_transform(X)
-            X = pd.DataFrame(X, columns=new_col_names)
+            X = self.create_data_frame_with_interactions(X)
         else:
             self.random_init_weights(X.shape[1])
 
@@ -167,3 +149,20 @@ class LogisticRegressor:
         fp = np.sum(y_hat & ~y)
         fn = np.sum(~y_hat & y)
         return 0.5 * (tp / (tp + fn) + tn / (tn + fp))
+
+    def create_data_frame_with_interactions(self, X):
+        # create the new column names
+        #! add "intercept" at the beginning of the list of column names when modifying
+        col_names_X = list(X.columns)
+        new_col_names = col_names_X.copy()
+        for idx, first_variable_name in enumerate(col_names_X):
+            for second_variable_name in col_names_X[idx + 1 :]:
+                new_col_names.append(f"{first_variable_name}*{second_variable_name}")
+
+        # create the interaction terms
+        #! for now without the intercept but its fairly easy to add,
+        #! removing include_bias=False created columns of 1s at the beginning of the dataframe
+        poly = PolynomialFeatures(degree=2, interaction_only=True, include_bias=False)
+        X = poly.fit_transform(X)
+        X = pd.DataFrame(X, columns=new_col_names)
+        return X
