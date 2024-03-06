@@ -34,12 +34,16 @@ class LogisticRegressor:
         self.beta = np.random.standard_normal(p)
 
     def predict_proba(self, X):
+        if self.include_interactions:
+            X = self.create_data_frame_with_interactions(X)
         return sigmoid(X @ self.beta)
 
     def predict(self, X):
         return self.predict_proba(X) > self.prob_threshold
 
     def minus_log_likelihood(self, X, y):
+        if self.include_interactions:
+            X = self.create_data_frame_with_interactions(X)
         weighted_input = X @ self.beta
         L = np.sum(y * weighted_input - np.log(1 + np.exp(weighted_input)))
         return -L
@@ -62,8 +66,7 @@ class LogisticRegressor:
         """
         calculates the second derivative of the loss function with respect to the beta
         """
-        # as we know from MSO
-
+        # as we also know from MSO
         p = sigmoid(X @ beta)
         W = np.diag(p * (1 - p))
         return X.T @ W @ X
@@ -82,6 +85,8 @@ class LogisticRegressor:
         if self.include_interactions:
             # initialize the weights
             self.random_init_weights(X.shape[1] + X.shape[1] * (X.shape[1] - 1) // 2)
+
+            # transform input data to include interaction terms
             X = self.create_data_frame_with_interactions(X)
         else:
             self.random_init_weights(X.shape[1])
@@ -151,6 +156,9 @@ class LogisticRegressor:
         return 0.5 * (tp / (tp + fn) + tn / (tn + fp))
 
     def create_data_frame_with_interactions(self, X):
+        if type(X) is not pd.DataFrame:
+            X = pd.DataFrame(X)
+
         # create the new column names
         #! add "intercept" at the beginning of the list of column names when modifying
         col_names_X = list(X.columns)
