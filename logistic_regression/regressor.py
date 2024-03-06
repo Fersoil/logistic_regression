@@ -6,23 +6,23 @@ from .optimizers import mini_batch_gd, iwls, adam, sgd, newton
 
 
 class LogisticRegressor:
-    slots = ["beta", "prob_treshold", "optimize"]
+    slots = ["beta", "prob_threshold", "optimize"]
 
-    def __init__(self, p, descent_algorithm="minibatch", prob_treshold=0.5):
+    def __init__(self, p, descent_algorithm="minibatch", prob_threshold=0.5):
         """
         Initialize the LogisticRegressor class.
 
         Parameters:
         - p (int): The number of features in the input data.
         - descent_algorithm (str, optional): The descent algorithm to use for optimization. Defaults to "minibatch". Options are "minibatch", "newton", "iwls", "adam", "sgd".
-        - prob_treshold (float, optional): The probability threshold for classification, which determines w Defaults to 0.5.
+        - prob_threshold (float, optional): The probability threshold for classification, which determines w Defaults to 0.5.
         """
 
         self.p = p
         self.random_init_weights(p)
         self.descent_algorithm = descent_algorithm
 
-        self.prob_treshold = prob_treshold
+        self.prob_threshold = prob_threshold
 
     def random_init_weights(self, p):
         self.beta = np.random.standard_normal(p)
@@ -31,7 +31,7 @@ class LogisticRegressor:
         return sigmoid(X @ self.beta)
 
     def predict(self, X):
-        return self.predict_proba(X) > self.prob_treshold
+        return self.predict_proba(X) > self.prob_threshold
 
     def minus_log_likelihood(self, X, y):
         weighted_input = X @ self.beta
@@ -48,7 +48,7 @@ class LogisticRegressor:
         """
         # as we know from MSO
         p = sigmoid(X @ beta)
-        if y.shape == (): # if y is a scalar, then there wont be matrix multiplication
+        if y.shape == ():  # if y is a scalar, then there wont be matrix multiplication
             return -X.T * (y - p)
         return -X.T @ (y - p)
 
