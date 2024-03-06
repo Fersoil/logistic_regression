@@ -8,12 +8,13 @@ from .optimizers import mini_batch_gd, iwls, adam, sgd, newton
 
 
 class LogisticRegressor:
-    slots = ["beta", "prob_threshold", "descent_algorithm", "include_interactions"]
+    slots = ["beta", "prob_threshold", "descent_algorithm", "include_intercept", "include_interactions"]
 
     def __init__(
         self,
         descent_algorithm="minibatch",
         prob_threshold=0.5,
+        include_intercept=True,
         include_interactions=False,
     ):
         """
@@ -22,11 +23,13 @@ class LogisticRegressor:
         Parameters:
         - descent_algorithm (str, optional): The descent algorithm to use for optimization. Defaults to "minibatch". Options are "minibatch", "newton", "iwls", "adam", "sgd".
         - prob_threshold (float, optional): The probability threshold for classification, which determines w Defaults to 0.5.
+        - include_intercept (bool, optional): Whether to include intercept term in the model. Defaults to True.
         - include_interactions (bool, optional): Whether to include interaction terms in the model. Defaults to False.
         """
 
         self.descent_algorithm = descent_algorithm
         self.prob_threshold = prob_threshold
+        self.include_intercept = include_intercept
         self.include_interactions = include_interactions
         self.beta = None
 
@@ -34,16 +37,20 @@ class LogisticRegressor:
         self.beta = np.random.standard_normal(p)
 
     def predict_proba(self, X):
-        if self.include_interactions:
-            X = self.create_data_frame_with_interactions(X)
+        if X.shape[1] != len(self.beta):
+            # if there are no interaction or intercept terms, then we need to add them
+            X = self.create_data_frame(X)
+
         return sigmoid(X @ self.beta)
 
     def predict(self, X):
         return self.predict_proba(X) > self.prob_threshold
 
     def minus_log_likelihood(self, X, y):
-        if self.include_interactions:
-            X = self.create_data_frame_with_interactions(X)
+        if X.shape[1] != len(self.beta):
+            # if there are no interaction or intercept terms, then we need to add them
+            X = self.create_data_frame(X)
+
         weighted_input = X @ self.beta
         L = np.sum(y * weighted_input - np.log(1 + np.exp(weighted_input)))
         return -L
@@ -51,21 +58,27 @@ class LogisticRegressor:
     def loss(self, y, y_hat_proba):
         # log likelihood loss
         return -np.sum(y * np.log(y_hat_proba) + (1 - y) * np.log(1 - y_hat_proba))
-
+    
+    @staticmethod
     def loss_prime(X, y, beta):
         """
         calculates the derivative of the loss function with respect to the beta
         """
+        assert X.shape[1] == len(beta), "Number of features in X must match the length of beta, maybe try adding an intercept or interaction terms"
+
         # as we know from MSO
         p = sigmoid(X @ beta)
         if y.shape == ():  # if y is a scalar, then there wont be matrix multiplication
             return -X.T * (y - p)
         return -X.T @ (y - p)
 
+    @staticmethod
     def loss_second(X, y, beta):
         """
         calculates the second derivative of the loss function with respect to the beta
         """
+        assert X.shape[1] == len(beta), "Number of features in X must match the length of beta, maybe try adding an intercept or interaction terms"
+        
         # as we also know from MSO
         p = sigmoid(X @ beta)
         W = np.diag(p * (1 - p))
@@ -80,16 +93,11 @@ class LogisticRegressor:
         batch_size=32,
         verbose=False,
     ):
-        # TODO normalize the data
 
-        if self.include_interactions:
-            # initialize the weights
-            self.random_init_weights(X.shape[1] + X.shape[1] * (X.shape[1] - 1) // 2)
-
-            # transform input data to include interaction terms
-            X = self.create_data_frame_with_interactions(X)
-        else:
-            self.random_init_weights(X.shape[1])
+        # transform input data to include interaction terms and an intercept term
+        X = self.create_data_frame(X)
+        
+        self.random_init_weights(X.shape[1])
 
         if self.descent_algorithm == "minibatch":
             self.beta = mini_batch_gd(
@@ -154,23 +162,38 @@ class LogisticRegressor:
         fp = np.sum(y_hat & ~y)
         fn = np.sum(~y_hat & y)
         return 0.5 * (tp / (tp + fn) + tn / (tn + fp))
+    
+    def create_data_frame(self, X):
+        if self.include_interactions:
+            return self.create_data_frame_with_interactions(X)
+        if self.include_intercept:
+            return self.create_data_frame_with_intersept(X)
+        return pd.DataFrame(X)
+    
+    def create_data_frame_with_intersept(self, X):
+        # function creates a data frame with an intercept column, when there are no interaction terms
+        if type(X) is not pd.DataFrame:
+            X = pd.DataFrame(X)
+        X.insert(0, "intercept", 1)
+        return X
 
     def create_data_frame_with_interactions(self, X):
         if type(X) is not pd.DataFrame:
             X = pd.DataFrame(X)
 
         # create the new column names
-        #! add "intercept" at the beginning of the list of column names when modifying
+        
         col_names_X = list(X.columns)
         new_col_names = col_names_X.copy()
+        if self.include_intercept:
+            new_col_names = ["intercept"] + col_names_X
+        
         for idx, first_variable_name in enumerate(col_names_X):
             for second_variable_name in col_names_X[idx + 1 :]:
                 new_col_names.append(f"{first_variable_name}*{second_variable_name}")
 
         # create the interaction terms
-        #! for now without the intercept but its fairly easy to add,
-        #! removing include_bias=False created columns of 1s at the beginning of the dataframe
-        poly = PolynomialFeatures(degree=2, interaction_only=True, include_bias=False)
+        poly = PolynomialFeatures(degree=2, interaction_only=True, include_bias=self.include_intercept)
         X = poly.fit_transform(X)
         X = pd.DataFrame(X, columns=new_col_names)
         return X
