@@ -74,7 +74,7 @@ def newton(
     verbose=False,
 ):
     """
-    Performs Newton method optimization using second order derviatives
+    Performs Newton method optimization using second order derivatives
 
     Parameters:
     - X: Input data.
@@ -108,7 +108,7 @@ def newton(
 
 def iwls(X, y, initial_solution, max_num_epoch=1000, verbose=False):
     """
-    Performs iteratively reweighted least squares optimization. Uses the log-likelihood loss
+    Performs iteratively reweighed least squares optimization. Uses the log-likelihood loss
 
     Parameters:
     - X: Input data.
