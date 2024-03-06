@@ -8,19 +8,26 @@ from .optimizers import mini_batch_gd, iwls, adam, sgd, newton
 
 
 class LogisticRegressor:
-    slots = ["beta", "prob_threshold", "optimize"]
+    slots = ["beta", "prob_threshold", "descent_algorithm", "include_interactions"]
 
-    def __init__(self, descent_algorithm="minibatch", prob_threshold=0.5):
+    def __init__(
+        self,
+        descent_algorithm="minibatch",
+        prob_threshold=0.5,
+        include_interactions=False,
+    ):
         """
         Initialize the LogisticRegressor class.
 
         Parameters:
         - descent_algorithm (str, optional): The descent algorithm to use for optimization. Defaults to "minibatch". Options are "minibatch", "newton", "iwls", "adam", "sgd".
         - prob_threshold (float, optional): The probability threshold for classification, which determines w Defaults to 0.5.
+        - include_interactions (bool, optional): Whether to include interaction terms in the model. Defaults to False.
         """
 
         self.descent_algorithm = descent_algorithm
         self.prob_threshold = prob_threshold
+        self.include_interactions = include_interactions
         self.beta = None
 
     def random_init_weights(self, p):
@@ -67,13 +74,12 @@ class LogisticRegressor:
         y,
         learning_rate=0.01,
         max_num_epoch=1000,
-        include_interactions=False,
         batch_size=32,
         verbose=False,
     ):
         # TODO normalize the data
 
-        if include_interactions:
+        if self.include_interactions:
             # initialize the weights
             self.random_init_weights(X.shape[1] + X.shape[1] * (X.shape[1] - 1) // 2)
 
