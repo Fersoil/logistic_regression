@@ -8,8 +8,8 @@
 
 
 ### Large datasets (more than 10 variables)
-1. [Dota2-Games-Results-Data-Set (116 features)](https://www.openml.org/search?type=data&sort=date&status=active&order=desc&qualities.NumberOfClasses=%3D_2&qualities.NumberOfFeatures=between_100_1000&id=45563)
-2. [Telco Customer Churn (20 features)](https://www.kaggle.com/datasets/blastchar/telco-customer-churn?resource=download#)
+1. [~~Dota2-Games-Results-Data-Set (116 features)~~ shitty data](https://www.openml.org/search?type=data&sort=date&status=active&order=desc&qualities.NumberOfClasses=%3D_2&qualities.NumberOfFeatures=between_100_1000&id=45563)
+2. [~~Telco Customer Churn (20 features)~~ mostly not numerical](https://www.kaggle.com/datasets/blastchar/telco-customer-churn?resource=download#)
 3. [communities-and-crime-binary (128 features)](https://www.openml.org/search?type=data&sort=date&status=active&order=desc&qualities.NumberOfClasses=%3D_2&qualities.NumberOfFeatures=between_100_1000&id=43891)
 4. [SantanderCustomerSatisfaction (201 features)](https://www.openml.org/search?type=data&sort=date&status=active&order=desc&qualities.NumberOfClasses=%3D_2&qualities.NumberOfFeatures=between_100_1000&id=42435)
 5. [PolishCompaniesBancrupcy (64 features)](https://archive.ics.uci.edu/dataset/365/polish+companies+bankruptcy+data)
