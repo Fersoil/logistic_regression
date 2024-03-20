@@ -8,7 +8,13 @@ from .optimizers import mini_batch_gd, iwls, adam, sgd, newton
 
 
 class LogisticRegressor:
-    slots = ["beta", "prob_threshold", "descent_algorithm", "include_intercept", "include_interactions"]
+    slots = [
+        "beta",
+        "prob_threshold",
+        "descent_algorithm",
+        "include_intercept",
+        "include_interactions",
+    ]
 
     def __init__(
         self,
@@ -58,13 +64,15 @@ class LogisticRegressor:
     def loss(self, y, y_hat_proba):
         # log likelihood loss
         return -np.sum(y * np.log(y_hat_proba) + (1 - y) * np.log(1 - y_hat_proba))
-    
+
     @staticmethod
     def loss_prime(X, y, beta):
         """
         calculates the derivative of the loss function with respect to the beta
         """
-        assert X.shape[1] == len(beta), "Number of features in X must match the length of beta, maybe try adding an intercept or interaction terms"
+        assert X.shape[1] == len(
+            beta
+        ), "Number of features in X must match the length of beta, maybe try adding an intercept or interaction terms"
 
         # as we know from MSO
         p = sigmoid(X @ beta)
@@ -77,8 +85,10 @@ class LogisticRegressor:
         """
         calculates the second derivative of the loss function with respect to the beta
         """
-        assert X.shape[1] == len(beta), "Number of features in X must match the length of beta, maybe try adding an intercept or interaction terms"
-        
+        assert X.shape[1] == len(
+            beta
+        ), "Number of features in X must match the length of beta, maybe try adding an intercept or interaction terms"
+
         # as we also know from MSO
         p = sigmoid(X @ beta)
         W = np.diag(p * (1 - p))
@@ -96,7 +106,7 @@ class LogisticRegressor:
 
         # transform input data to include interaction terms and an intercept term
         X = self.create_data_frame(X)
-        
+
         self.random_init_weights(X.shape[1])
 
         if self.descent_algorithm == "minibatch":
@@ -162,14 +172,14 @@ class LogisticRegressor:
         fp = np.sum(y_hat & ~y)
         fn = np.sum(~y_hat & y)
         return 0.5 * (tp / (tp + fn) + tn / (tn + fp))
-    
+
     def create_data_frame(self, X):
         if self.include_interactions:
             return self.create_data_frame_with_interactions(X)
         if self.include_intercept:
             return self.create_data_frame_with_intersept(X)
         return pd.DataFrame(X)
-    
+
     def create_data_frame_with_intersept(self, X):
         # function creates a data frame with an intercept column, when there are no interaction terms
         if type(X) is not pd.DataFrame:
@@ -182,18 +192,20 @@ class LogisticRegressor:
             X = pd.DataFrame(X)
 
         # create the new column names
-        
+
         col_names_X = list(X.columns)
         new_col_names = col_names_X.copy()
         if self.include_intercept:
             new_col_names = ["intercept"] + col_names_X
-        
+
         for idx, first_variable_name in enumerate(col_names_X):
             for second_variable_name in col_names_X[idx + 1 :]:
                 new_col_names.append(f"{first_variable_name}*{second_variable_name}")
 
         # create the interaction terms
-        poly = PolynomialFeatures(degree=2, interaction_only=True, include_bias=self.include_intercept)
+        poly = PolynomialFeatures(
+            degree=2, interaction_only=True, include_bias=self.include_intercept
+        )
         X = poly.fit_transform(X)
         X = pd.DataFrame(X, columns=new_col_names)
         return X
