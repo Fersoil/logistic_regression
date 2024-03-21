@@ -167,11 +167,18 @@ class LogisticRegressor:
 
     def balanced_accuracy(self, X, y):
         y_hat = self.predict(X)
+        confusion_matrix = self.confusion_matrix(X, y)
+        return 0.5 * (
+            confusion_matrix[0, 0] / np.sum(y) + confusion_matrix[1, 1] / np.sum(~y)
+        )
+
+    def confusion_matrix(self, X, y):
+        y_hat = self.predict(X)
         tp = np.sum(y_hat & y)
         tn = np.sum(~y_hat & ~y)
         fp = np.sum(y_hat & ~y)
         fn = np.sum(~y_hat & y)
-        return 0.5 * (tp / (tp + fn) + tn / (tn + fp))
+        return np.array([[tp, fp], [fn, tn]])
 
     def create_data_frame(self, X):
         if self.include_interactions:
@@ -184,7 +191,9 @@ class LogisticRegressor:
         # function creates a data frame with an intercept column, when there are no interaction terms
         if type(X) is not pd.DataFrame:
             X = pd.DataFrame(X)
-        X.insert(0, "intercept", 1)
+        if not self.include_intercept:
+            X.insert(0, "intercept", 1)
+            self.include_intercept = True
         return X
 
     def create_data_frame_with_interactions(self, X):
