@@ -191,9 +191,8 @@ class LogisticRegressor:
         # function creates a data frame with an intercept column, when there are no interaction terms
         if type(X) is not pd.DataFrame:
             X = pd.DataFrame(X)
-        if not self.include_intercept:
+        if "intercept" not in X.columns:
             X.insert(0, "intercept", 1)
-            self.include_intercept = True
         return X
 
     def create_data_frame_with_interactions(self, X):
