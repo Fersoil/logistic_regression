@@ -57,9 +57,11 @@ class LogisticRegressor:
     def minus_log_likelihood(self, X, y):
         if X.shape[1] != len(self.beta):
             # if there are no interaction or intercept terms, then we need to add them
-            X = self.create_data_frame(X)
+            X_copy = self.create_data_frame(X)
+        else:
+            X_copy = X
 
-        weighted_input = X @ self.beta
+        weighted_input = X_copy @ self.beta
         L = np.sum(y * weighted_input - np.log(1 + np.exp(weighted_input)))
         return -L
 
@@ -183,6 +185,7 @@ class LogisticRegressor:
         return np.array([[tp, fp], [fn, tn]])
 
     def create_data_frame(self, X):
+        X = X.copy()
         if self.include_interactions:
             return self.create_data_frame_with_interactions(X)
         if self.include_intercept:
