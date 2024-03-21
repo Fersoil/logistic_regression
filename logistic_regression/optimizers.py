@@ -35,14 +35,14 @@ def mini_batch_gd(
     """
 
     # initialization
-    if type(X) is pd.DataFrame:
+    if isinstance(X, pd.DataFrame):
         X = X.to_numpy()
-    if type(y) is pd.DataFrame:
+    if isinstance(y, pd.DataFrame) or isinstance(y, pd.Series):
         y = y.to_numpy().T
     current_solution = initial_solution
 
     # set batch size
-    assert type(batch_size) is int, "batch_size must be an integer"
+    assert isinstance(batch_size, int), "batch_size must be an integer"
     if batch_fraction is not None:
         assert 0 < batch_fraction <= 1, "batch_fraction must be between 0 and 1"
         batch_size = int(X.shape[0] * batch_fraction)
@@ -51,6 +51,7 @@ def mini_batch_gd(
     for epoch in range(max_num_epoch):
         N, _ = X.shape
         shuffled_idx = np.random.permutation(N)
+        
         X, y = X[shuffled_idx], y[shuffled_idx]
         for idx in range(iterations):
             X_selected, y_selected = (
@@ -228,7 +229,7 @@ def adam(
     counter = 0
 
     # set batch size
-    assert type(batch_size) is int, "batch_size must be an integer"
+    assert isinstance(batch_size, int), "batch_size must be an integer"
     if batch_fraction is not None:
         assert 0 < batch_fraction <= 1, "batch_fraction must be between 0 and 1"
         batch_size = int(X.shape[0] * batch_fraction)

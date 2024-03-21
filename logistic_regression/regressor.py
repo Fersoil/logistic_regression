@@ -45,9 +45,11 @@ class LogisticRegressor:
     def predict_proba(self, X):
         if X.shape[1] != len(self.beta):
             # if there are no interaction or intercept terms, then we need to add them
-            X = self.create_data_frame(X)
+            X_copy = self.create_data_frame(X)
+        else:
+            X_copy = X
 
-        return sigmoid(X @ self.beta)
+        return sigmoid(X_copy @ self.beta)
 
     def predict(self, X):
         return self.predict_proba(X) > self.prob_threshold
@@ -55,9 +57,11 @@ class LogisticRegressor:
     def minus_log_likelihood(self, X, y):
         if X.shape[1] != len(self.beta):
             # if there are no interaction or intercept terms, then we need to add them
-            X = self.create_data_frame(X)
+            X_copy = self.create_data_frame(X)
+        else:
+            X_copy = X
 
-        weighted_input = X @ self.beta
+        weighted_input = X_copy @ self.beta
         L = np.sum(y * weighted_input - np.log(1 + np.exp(weighted_input)))
         return -L
 
@@ -105,13 +109,14 @@ class LogisticRegressor:
     ):
 
         # transform input data to include interaction terms and an intercept term
-        X = self.create_data_frame(X)
+        X_copy = self.create_data_frame(X)
 
-        self.random_init_weights(X.shape[1])
+
+        self.random_init_weights(X_copy.shape[1])
 
         if self.descent_algorithm == "minibatch":
             self.beta = mini_batch_gd(
-                X,
+                X_copy,
                 y,
                 self.beta,
                 LogisticRegressor.loss_prime,
@@ -123,7 +128,7 @@ class LogisticRegressor:
 
         elif self.descent_algorithm == "iwls":
             self.beta = iwls(
-                X,
+                X_copy,
                 y,
                 self.beta,
                 max_num_epoch=max_num_epoch,
@@ -131,7 +136,7 @@ class LogisticRegressor:
             )
         elif self.descent_algorithm == "adam":
             self.beta = adam(
-                X,
+                X_copy,
                 y,
                 self.beta,
                 LogisticRegressor.loss_prime,
@@ -141,7 +146,7 @@ class LogisticRegressor:
             )
         elif self.descent_algorithm == "sgd":
             self.beta = sgd(
-                X,
+                X_copy,
                 y,
                 self.beta,
                 LogisticRegressor.loss_prime,
@@ -151,7 +156,7 @@ class LogisticRegressor:
             )
         elif self.descent_algorithm == "newton":
             self.beta = newton(
-                X,
+                X_copy,
                 y,
                 self.beta,
                 LogisticRegressor.loss_prime,
@@ -166,7 +171,6 @@ class LogisticRegressor:
         return np.mean(self.predict(X) == y)
 
     def balanced_accuracy(self, X, y):
-        y_hat = self.predict(X)
         confusion_matrix = self.confusion_matrix(X, y)
         return 0.5 * (
             confusion_matrix[0, 0] / np.sum(y) + confusion_matrix[1, 1] / np.sum(~y)
@@ -181,6 +185,7 @@ class LogisticRegressor:
         return np.array([[tp, fp], [fn, tn]])
 
     def create_data_frame(self, X):
+        X = X.copy()
         if self.include_interactions:
             return self.create_data_frame_with_interactions(X)
         if self.include_intercept:
