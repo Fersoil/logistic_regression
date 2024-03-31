@@ -92,9 +92,9 @@ def newton(
     """
 
     # initialization
-    if type(X) is pd.DataFrame:
+    if isinstance(X, pd.DataFrame):
         X = X.to_numpy()
-    if type(y) is pd.DataFrame:
+    if isinstance(y, pd.DataFrame) or isinstance(y, pd.Series):
         y = y.to_numpy().T
     current_solution = initial_solution
 
@@ -123,9 +123,9 @@ def iwls(X, y, initial_solution, max_num_epoch=1000, verbose=False):
     """
 
     # initialization
-    if type(X) is pd.DataFrame:
+    if isinstance(X, pd.DataFrame):
         X = X.to_numpy()
-    if type(y) is pd.DataFrame:
+    if isinstance(y, pd.DataFrame) or isinstance(y, pd.Series):
         y = y.to_numpy().T
     current_solution = initial_solution
 
@@ -134,6 +134,7 @@ def iwls(X, y, initial_solution, max_num_epoch=1000, verbose=False):
         W = np.diag(P * (1 - P))
         Z = X @ current_solution + np.linalg.inv(W) @ (y - P)
         current_solution = np.linalg.inv(X.T @ W @ X) @ X.T @ W @ Z
+
         if verbose:
             print(f"Epoch {epoch}, solution:", current_solution)
     return current_solution
@@ -165,9 +166,9 @@ def sgd(
     """
 
     # initialization
-    if type(X) is pd.DataFrame:
+    if isinstance(X, pd.DataFrame):
         X = X.to_numpy()
-    if type(y) is pd.DataFrame:
+    if isinstance(y, pd.DataFrame) or isinstance(y, pd.Series):
         y = y.to_numpy().T
     current_solution = initial_solution
 
@@ -219,9 +220,9 @@ def adam(
     """
 
     # initialization
-    if type(X) is pd.DataFrame:
+    if isinstance(X, pd.DataFrame):
         X = X.to_numpy()
-    if type(y) is pd.DataFrame:
+    if isinstance(y, pd.DataFrame) or isinstance(y, pd.Series):
         y = y.to_numpy().T
     current_solution = initial_solution
     momentum = np.zeros_like(initial_solution)

@@ -13,7 +13,7 @@ y = aids['target']
 X = aids.drop('target', axis=1)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=43)
 
-lr = logistic_regression.LogisticRegressor()
+lr = logistic_regression.LogisticRegressor(descent_algorithm="adam")
 import pdb; pdb.set_trace()
 X_copy_train = lr.create_data_frame(X_train)
 

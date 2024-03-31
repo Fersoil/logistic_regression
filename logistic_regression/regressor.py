@@ -171,9 +171,13 @@ class LogisticRegressor:
         return np.mean(self.predict(X) == y)
 
     def balanced_accuracy(self, X, y):
+
+        if -1 in y.unique():
+            y = y.replace(-1, 0)
+
         confusion_matrix = self.confusion_matrix(X, y)
         return 0.5 * (
-            confusion_matrix[0, 0] / np.sum(y) + confusion_matrix[1, 1] / np.sum(~y)
+            confusion_matrix[0, 0] / np.sum(y) + confusion_matrix[1, 1] / np.sum(1 - y)
         )
 
     def confusion_matrix(self, X, y):
