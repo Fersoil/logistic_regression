@@ -13,6 +13,7 @@ def mini_batch_gd(
     calculate_gradient: callable,
     learning_rate: float=0.01,
     max_num_epoch: int=1000,
+    tolerance: float=1e-6,
     batch_size: int=32,
     batch_fraction: float=None,
     verbose: bool=False,
@@ -27,6 +28,7 @@ def mini_batch_gd(
     - calculate_gradient: Function to calculate the gradient.
     - learning_rate: Learning rate for updating the solution (default: 0.01).
     - max_num_iters: Maximum number of iterations (default: 1000).
+    - tolerance: Tolerance for the stopping criterion (default: 1e-6). Stops if the L inf norm of the gradient is below this value.
     - batch_size: Size of the mini batch (default: 1).
     - batch_fraction: Fraction of the data to use in each mini batch (default: None).
     - verbose: Whether to print the solution at each iteration (default: False).
@@ -61,6 +63,9 @@ def mini_batch_gd(
             current_solution = current_solution - learning_rate * gradient
         if verbose:
             print(f"Epoch {epoch}, solution:", current_solution)
+
+        if np.linalg.norm(gradient, ord=np.inf) < tolerance:
+            return current_solution
     return current_solution
 
 
@@ -71,6 +76,7 @@ def newton(
     calculate_gradient: callable,
     calculate_hessian: callable,
     max_num_epoch: int=1000,
+    tolerance: float=1e-6,
     verbose: bool=False,
 ):
     """
@@ -83,6 +89,7 @@ def newton(
     - calculate_gradient: Function to calculate the gradient.
     - calculate_hessian: Function to calculate the Hessian.
     - max_num_epoch: Maximum number of iterations (default: 1000).
+    - tolerance: Tolerance for the stopping criterion (default: 1e-6). Stops if the L inf norm of the gradient is below this value.
     - verbose: Whether to print the solution at each iteration (default: False).
 
 
@@ -103,6 +110,9 @@ def newton(
         current_solution = current_solution - np.linalg.inv(hessian) @ gradient
         if verbose:
             print(f"Epoch {epoch}, solution:", current_solution)
+
+        if np.linalg.norm(gradient, ord=np.inf) < tolerance:
+            return current_solution
     return current_solution
 
 
@@ -111,6 +121,7 @@ def iwls(
     y: Union[np.ndarray, pd.DataFrame],
     initial_solution: np.ndarray,
     max_num_epoch: int=1000, 
+    tolerance: float=1e-6,
     verbose: bool=False):
     """
     Performs iteratively reweighed least squares optimization. Uses the log-likelihood loss.
@@ -120,6 +131,7 @@ def iwls(
     - y: Target labels.
     - initial_solution: Initial solution for optimization.
     - max_num_epoch: Maximum number of iterations (default: 1000).
+    - tolerance: Tolerance for the stopping criterion (default: 1e-6). Stops if the L inf norm of the gradient is below this value.
     - verbose: Whether to print the solution at each iteration (default: False).
 
     Returns:
@@ -141,6 +153,12 @@ def iwls(
 
         if verbose:
             print(f"Epoch {epoch}, solution:", current_solution)
+        
+        # maybe propose better stopping criterion here
+        gradient = -X.T @ (y - P)
+
+        if np.linalg.norm(gradient, ord=np.inf) < tolerance:
+            return current_solution
     return current_solution
 
 
@@ -151,6 +169,7 @@ def sgd(
     calculate_gradient: callable,
     learning_rate: float=0.01,
     max_num_epoch: int=1000,
+    tolerance: float=1e-6,
     verbose: bool=False,
 ):
     """
@@ -163,6 +182,7 @@ def sgd(
     - calculate_gradient: Function to calculate the gradient.
     - learning_rate: Learning rate for updating the solution (default: 0.01).
     - max_num_iters: Maximum number of iterations (default: 1000).
+    - tolerance: Tolerance for the stopping criterion (default: 1e-6). Stops if the L inf norm of the gradient is below this value.
     - verbose: Whether to print the solution at each iteration (default: False).
 
     Returns:
@@ -185,6 +205,9 @@ def sgd(
             current_solution = current_solution - learning_rate * gradient
         if verbose:
             print(f"Epoch {epoch}, solution: {current_solution}")
+        
+        if np.linalg.norm(gradient, ord=np.inf) < tolerance:
+            return current_solution
     return current_solution
 
 
@@ -197,6 +220,7 @@ def adam(
     momentum_decay: float=0.9,
     squared_gradient_decay: float=0.99,
     max_num_epoch: int=1000,
+    tolerance: float=1e-6,
     batch_size: int=32,
     batch_fraction: float=None,
     epsilon: float=1e-8,
@@ -214,6 +238,7 @@ def adam(
     - momentum_decay: Decay rate for the momentum (default: 0.9).
     - squared_gradient_decay: Decay rate for the squared gradient (default: 0.99).
     - max_num_iters: Maximum number of iterations (default: 1000).
+    - tolerance: Tolerance for the stopping criterion (default: 1e-6). Stops if the L inf norm of the gradient is below this value.
     - batch_size: Size of the mini batch (default: 1).
     - batch_fraction: Fraction of the data to use in each mini batch (default: None).
     - epsilon: Small value to avoid division by zero (default: 1e-8).
@@ -268,4 +293,8 @@ def adam(
             )
         if verbose:
             print(f"Epoch {epoch}, solution:", current_solution)
+
+        if np.linalg.norm(gradient, ord=np.inf) < tolerance:
+            return current_solution
+
     return current_solution
