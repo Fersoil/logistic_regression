@@ -65,6 +65,8 @@ def mini_batch_gd(
             print(f"Epoch {epoch}, solution:", current_solution)
 
         if np.linalg.norm(gradient, ord=np.inf) < tolerance:
+            if verbose:
+                print("Early stopping criterion reached.")
             return current_solution
     return current_solution
 
@@ -112,6 +114,8 @@ def newton(
             print(f"Epoch {epoch}, solution:", current_solution)
 
         if np.linalg.norm(gradient, ord=np.inf) < tolerance:
+            if verbose:
+                print("Early stopping criterion reached.")
             return current_solution
     return current_solution
 
@@ -122,6 +126,7 @@ def iwls(
     initial_solution: np.ndarray,
     max_num_epoch: int=1000, 
     tolerance: float=1e-6,
+    epsilon: float=1e-3,
     verbose: bool=False):
     """
     Performs iteratively reweighed least squares optimization. Uses the log-likelihood loss.
@@ -148,16 +153,29 @@ def iwls(
     for epoch in range(max_num_epoch):
         P = sigmoid(X @ current_solution)
         W = np.diag(P * (1 - P))
-        Z = X @ current_solution + np.linalg.inv(W) @ (y - P)
-        current_solution = np.linalg.inv(X.T @ W @ X) @ X.T @ W @ Z
 
-        if verbose:
-            print(f"Epoch {epoch}, solution:", current_solution)
-        
+        # prevent singular matrix
+        W = W + epsilon * np.eye(W.shape[0])
+        Z = X @ current_solution + np.linalg.inv(W) @ (y - P)
+        H = X.T @ W @ X
+
+        # prevent singular matrix
+        H = H + epsilon * np.eye(H.shape[0])
+        current_solution = np.linalg.inv(H) @ X.T @ W @ Z
+
+
         # maybe propose better stopping criterion here
         gradient = -X.T @ (y - P)
 
+        if verbose:
+            print(f"Epoch {epoch}, solution:", current_solution)
+            print(f"norm: {np.linalg.norm(gradient, ord=np.inf)}")
+            print(f"Gradient: {gradient}")
+        
+
         if np.linalg.norm(gradient, ord=np.inf) < tolerance:
+            if verbose:
+                print("Early stopping criterion reached.")
             return current_solution
     return current_solution
 
@@ -167,7 +185,7 @@ def sgd(
     y: Union[np.ndarray, pd.DataFrame],
     initial_solution: np.ndarray,
     calculate_gradient: callable,
-    learning_rate: float=0.01,
+    learning_rate: float=0.001,
     max_num_epoch: int=1000,
     tolerance: float=1e-6,
     verbose: bool=False,
@@ -180,7 +198,7 @@ def sgd(
     - y: Target labels.
     - initial_solution: Initial solution for optimization.
     - calculate_gradient: Function to calculate the gradient.
-    - learning_rate: Learning rate for updating the solution (default: 0.01).
+    - learning_rate: Learning rate for updating the solution (default: 0.001).
     - max_num_iters: Maximum number of iterations (default: 1000).
     - tolerance: Tolerance for the stopping criterion (default: 1e-6). Stops if the L inf norm of the gradient is below this value.
     - verbose: Whether to print the solution at each iteration (default: False).
@@ -200,13 +218,18 @@ def sgd(
         N, _ = X.shape
         shuffled_idx = np.random.permutation(N)
         X, y = X[shuffled_idx], y[shuffled_idx]
+        grad_sum = np.zeros_like(current_solution)
         for X_selected, y_selected in zip(X, y):
             gradient = calculate_gradient(X_selected, y_selected, current_solution)
+            grad_sum += gradient
             current_solution = current_solution - learning_rate * gradient
         if verbose:
             print(f"Epoch {epoch}, solution: {current_solution}")
-        
+
+        gradient = grad_sum / N
         if np.linalg.norm(gradient, ord=np.inf) < tolerance:
+            if verbose:
+                print("Early stopping criterion reached.")
             return current_solution
     return current_solution
 
@@ -216,7 +239,7 @@ def adam(
     y: Union[np.ndarray, pd.DataFrame],
     initial_solution: np.ndarray,
     calculate_gradient: callable,
-    learning_rate: float=0.01,
+    learning_rate: float=0.001,
     momentum_decay: float=0.9,
     squared_gradient_decay: float=0.99,
     max_num_epoch: int=1000,
@@ -234,7 +257,7 @@ def adam(
     - y: Target labels.
     - initial_solution: Initial solution for optimization.
     - calculate_gradient: Function to calculate the gradient.
-    - learning_rate: Learning rate for updating the solution (default: 0.01).
+    - learning_rate: Learning rate for updating the solution (default: 0.001).
     - momentum_decay: Decay rate for the momentum (default: 0.9).
     - squared_gradient_decay: Decay rate for the squared gradient (default: 0.99).
     - max_num_iters: Maximum number of iterations (default: 1000).
@@ -295,6 +318,8 @@ def adam(
             print(f"Epoch {epoch}, solution:", current_solution)
 
         if np.linalg.norm(gradient, ord=np.inf) < tolerance:
+            if verbose:
+                print("Early stopping criterion reached.")
             return current_solution
 
     return current_solution

@@ -103,7 +103,7 @@ class LogisticRegressor:
         """
         calculates the derivative of the loss function with respect to the beta
         """
-        assert X.shape[1] == len(
+        assert X.shape[-1] == len(
             beta
         ), "Number of features in X must match the length of beta, maybe try adding an intercept or interaction terms"
 
@@ -122,7 +122,7 @@ class LogisticRegressor:
         """
         calculates the second derivative of the loss function with respect to the beta
         """
-        assert X.shape[1] == len(
+        assert X.shape[-1] == len(
             beta
         ), "Number of features in X must match the length of beta, maybe try adding an intercept or interaction terms"
 
@@ -137,6 +137,7 @@ class LogisticRegressor:
         y: Union[np.ndarray, pd.DataFrame],
         learning_rate: float = 0.01,
         max_num_epoch: int = 1000,
+        tolerance: float = 1e-6,
         batch_size: int = 32,
         verbose: bool = False,
     ):
@@ -154,6 +155,7 @@ class LogisticRegressor:
                 LogisticRegressor.loss_prime,
                 learning_rate=learning_rate,
                 max_num_epoch=max_num_epoch,
+                tolerance=tolerance,
                 batch_size=batch_size,
                 verbose=verbose,
             )
@@ -164,6 +166,7 @@ class LogisticRegressor:
                 y,
                 self.beta,
                 max_num_epoch=max_num_epoch,
+                tolerance=tolerance,
                 verbose=verbose,
             )
         elif self.descent_algorithm == "adam":
@@ -174,6 +177,7 @@ class LogisticRegressor:
                 LogisticRegressor.loss_prime,
                 learning_rate=learning_rate,
                 max_num_epoch=max_num_epoch,
+                tolerance=tolerance,
                 verbose=verbose,
             )
         elif self.descent_algorithm == "sgd":
@@ -184,6 +188,7 @@ class LogisticRegressor:
                 LogisticRegressor.loss_prime,
                 learning_rate=learning_rate,
                 max_num_epoch=max_num_epoch,
+                tolerance=tolerance,
                 verbose=verbose,
             )
         elif self.descent_algorithm == "newton":
@@ -194,6 +199,7 @@ class LogisticRegressor:
                 LogisticRegressor.loss_prime,
                 LogisticRegressor.loss_second,
                 max_num_epoch=max_num_epoch,
+                tolerance=tolerance,
                 verbose=verbose,
             )
         else:
