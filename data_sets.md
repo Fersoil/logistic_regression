@@ -8,13 +8,9 @@
 
 
 ### Large datasets (more than 10 variables)
-1. [~~Dota2-Games-Results-Data-Set (116 features)~~ shitty data](https://www.openml.org/search?type=data&sort=date&status=active&order=desc&qualities.NumberOfClasses=%3D_2&qualities.NumberOfFeatures=between_100_1000&id=45563)
-2. [~~Telco Customer Churn (20 features)~~ mostly categorical](https://www.kaggle.com/datasets/blastchar/telco-customer-churn?resource=download#)
-3. [communities-and-crime-binary (128 features)](https://www.openml.org/search?type=data&sort=date&status=active&order=desc&qualities.NumberOfClasses=%3D_2&qualities.NumberOfFeatures=between_100_1000&id=43891)
-4. [~~SantanderCustomerSatisfaction (201 features)~~ too much data](https://www.openml.org/search?type=data&sort=date&status=active&order=desc&qualities.NumberOfClasses=%3D_2&qualities.NumberOfFeatures=between_100_1000&id=42435)
-5. [PolishCompaniesBancrupcy (64 features)](https://archive.ics.uci.edu/dataset/365/polish+companies+bankruptcy+data)
-6. [AIDS Clinical Trials (23 features)](https://archive.ics.uci.edu/dataset/890/aids+clinical+trials+group+study+175)
-7. [~~Credit card Details Binary Classification Problem (17 features)~~ mostly categorical ](https://www.kaggle.com/datasets/rohitudageri/credit-card-details)
+5. [communities-and-crime-binary (128 features)](https://www.openml.org/search?type=data&sort=date&status=active&order=desc&qualities.NumberOfClasses=%3D_2&qualities.NumberOfFeatures=between_100_1000&id=43891)
+6. [PolishCompaniesBancrupcy (64 features)](https://archive.ics.uci.edu/dataset/365/polish+companies+bankruptcy+data)
+7. [AIDS Clinical Trials (23 features)](https://archive.ics.uci.edu/dataset/890/aids+clinical+trials+group+study+175)
 8. [Heart Disease Health Indicators Dataset (21 features)](https://www.kaggle.com/datasets/alexteboul/heart-disease-health-indicators-dataset)
 9. [Customer Personality Analysis (29 features)](https://www.kaggle.com/datasets/imakash3011/customer-personality-analysis)
 10. [Web Page Phishing Dataset (20 features)](https://www.kaggle.com/datasets/danielfernandon/web-page-phishing-dataset)
