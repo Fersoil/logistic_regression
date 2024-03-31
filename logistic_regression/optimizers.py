@@ -1,20 +1,21 @@
 from abc import ABC, abstractmethod
 import numpy as np
 import pandas as pd
+from typing import Union
 
 from scipy.special import expit as sigmoid
 
 
 def mini_batch_gd(
-    X,
-    y,
-    initial_solution,
-    calculate_gradient,
-    learning_rate=0.01,
-    max_num_epoch=1000,
-    batch_size=1,
-    batch_fraction=None,
-    verbose=False,
+    X: Union[np.ndarray, pd.DataFrame],
+    y: Union[np.ndarray, pd.DataFrame],
+    initial_solution: np.ndarray,
+    calculate_gradient: callable,
+    learning_rate: float=0.01,
+    max_num_epoch: int=1000,
+    batch_size: int=32,
+    batch_fraction: float=None,
+    verbose: bool=False,
 ):
     """
     Performs mini batch gradient descent optimization.
@@ -41,8 +42,6 @@ def mini_batch_gd(
         y = y.to_numpy().T
     current_solution = initial_solution
 
-    # set batch size
-    assert isinstance(batch_size, int), "batch_size must be an integer"
     if batch_fraction is not None:
         assert 0 < batch_fraction <= 1, "batch_fraction must be between 0 and 1"
         batch_size = int(X.shape[0] * batch_fraction)
@@ -66,13 +65,13 @@ def mini_batch_gd(
 
 
 def newton(
-    X,
-    y,
-    initial_solution,
-    calculate_gradient,
-    calculate_hessian,
-    max_num_epoch=1000,
-    verbose=False,
+    X: Union[np.ndarray, pd.DataFrame],
+    y: Union[np.ndarray, pd.DataFrame],
+    initial_solution: np.ndarray,
+    calculate_gradient: callable,
+    calculate_hessian: callable,
+    max_num_epoch: int=1000,
+    verbose: bool=False,
 ):
     """
     Performs Newton method optimization using second order derivatives
@@ -107,9 +106,14 @@ def newton(
     return current_solution
 
 
-def iwls(X, y, initial_solution, max_num_epoch=1000, verbose=False):
+def iwls(
+    X: Union[np.ndarray, pd.DataFrame],
+    y: Union[np.ndarray, pd.DataFrame],
+    initial_solution: np.ndarray,
+    max_num_epoch: int=1000, 
+    verbose: bool=False):
     """
-    Performs iteratively reweighed least squares optimization. Uses the log-likelihood loss
+    Performs iteratively reweighed least squares optimization. Uses the log-likelihood loss.
 
     Parameters:
     - X: Input data.
@@ -141,13 +145,13 @@ def iwls(X, y, initial_solution, max_num_epoch=1000, verbose=False):
 
 
 def sgd(
-    X,
-    y,
-    initial_solution,
-    calculate_gradient,
-    learning_rate=0.01,
-    max_num_epoch=1000,
-    verbose=False,
+    X: Union[np.ndarray, pd.DataFrame],
+    y: Union[np.ndarray, pd.DataFrame],
+    initial_solution: np.ndarray,
+    calculate_gradient: callable,
+    learning_rate: float=0.01,
+    max_num_epoch: int=1000,
+    verbose: bool=False,
 ):
     """
     Performs stochastic gradient descent optimization.
@@ -185,18 +189,18 @@ def sgd(
 
 
 def adam(
-    X,
-    y,
-    initial_solution,
-    calculate_gradient,
-    learning_rate=0.01,
-    momentum_decay=0.9,
-    squared_gradient_decay=0.99,
-    max_num_epoch=1000,
-    batch_size=1,
-    batch_fraction=None,
-    epsilon=1e-8,
-    verbose=False,
+    X: Union[np.ndarray, pd.DataFrame],
+    y: Union[np.ndarray, pd.DataFrame],
+    initial_solution: np.ndarray,
+    calculate_gradient: callable,
+    learning_rate: float=0.01,
+    momentum_decay: float=0.9,
+    squared_gradient_decay: float=0.99,
+    max_num_epoch: int=1000,
+    batch_size: int=32,
+    batch_fraction: float=None,
+    epsilon: float=1e-8,
+    verbose: bool=False,
 ):
     """
     Performs optimization with adam algorithm.
