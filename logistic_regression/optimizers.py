@@ -6,9 +6,19 @@ from typing import Union
 from scipy.special import expit as sigmoid
 
 
+def transform_data_type(
+    X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.DataFrame, pd.Series]
+):
+    if isinstance(X, pd.DataFrame):
+        X = X.to_numpy()
+    if isinstance(y, pd.DataFrame) or isinstance(y, pd.Series):
+        y = y.to_numpy().T
+    return X, y
+
+
 def mini_batch_gd(
     X: Union[np.ndarray, pd.DataFrame],
-    y: Union[np.ndarray, pd.DataFrame],
+    y: Union[np.ndarray, pd.DataFrame, pd.Series],
     initial_solution: np.ndarray,
     calculate_gradient: callable,
     learning_rate: float = 0.01,
@@ -38,10 +48,7 @@ def mini_batch_gd(
     """
 
     # initialization
-    if isinstance(X, pd.DataFrame):
-        X = X.to_numpy()
-    if isinstance(y, pd.DataFrame) or isinstance(y, pd.Series):
-        y = y.to_numpy().T
+    X, y = transform_data_type(X, y)
     current_solution = initial_solution
 
     if batch_fraction is not None:
@@ -73,7 +80,7 @@ def mini_batch_gd(
 
 def newton(
     X: Union[np.ndarray, pd.DataFrame],
-    y: Union[np.ndarray, pd.DataFrame],
+    y: Union[np.ndarray, pd.DataFrame, pd.Series],
     initial_solution: np.ndarray,
     calculate_gradient: callable,
     calculate_hessian: callable,
@@ -100,10 +107,7 @@ def newton(
     """
 
     # initialization
-    if isinstance(X, pd.DataFrame):
-        X = X.to_numpy()
-    if isinstance(y, pd.DataFrame) or isinstance(y, pd.Series):
-        y = y.to_numpy().T
+    X, y = transform_data_type(X, y)
     current_solution = initial_solution
 
     for epoch in range(max_num_epoch):
@@ -122,7 +126,7 @@ def newton(
 
 def iwls(
     X: Union[np.ndarray, pd.DataFrame],
-    y: Union[np.ndarray, pd.DataFrame],
+    y: Union[np.ndarray, pd.DataFrame, pd.Series],
     initial_solution: np.ndarray,
     max_num_epoch: int = 1000,
     tolerance: float = 1e-6,
@@ -145,10 +149,7 @@ def iwls(
     """
 
     # initialization
-    if isinstance(X, pd.DataFrame):
-        X = X.to_numpy()
-    if isinstance(y, pd.DataFrame) or isinstance(y, pd.Series):
-        y = y.to_numpy().T
+    X, y = transform_data_type(X, y)
     current_solution = initial_solution
 
     for epoch in range(max_num_epoch):
@@ -181,7 +182,7 @@ def iwls(
 
 def sgd(
     X: Union[np.ndarray, pd.DataFrame],
-    y: Union[np.ndarray, pd.DataFrame],
+    y: Union[np.ndarray, pd.DataFrame, pd.Series],
     initial_solution: np.ndarray,
     calculate_gradient: callable,
     learning_rate: float = 0.001,
@@ -207,10 +208,7 @@ def sgd(
     """
 
     # initialization
-    if isinstance(X, pd.DataFrame):
-        X = X.to_numpy()
-    if isinstance(y, pd.DataFrame) or isinstance(y, pd.Series):
-        y = y.to_numpy().T
+    X, y = transform_data_type(X, y)
     current_solution = initial_solution
 
     for epoch in range(max_num_epoch):
@@ -235,7 +233,7 @@ def sgd(
 
 def adam(
     X: Union[np.ndarray, pd.DataFrame],
-    y: Union[np.ndarray, pd.DataFrame],
+    y: Union[np.ndarray, pd.DataFrame, pd.Series],
     initial_solution: np.ndarray,
     calculate_gradient: callable,
     learning_rate: float = 0.001,
@@ -271,10 +269,7 @@ def adam(
     """
 
     # initialization
-    if isinstance(X, pd.DataFrame):
-        X = X.to_numpy()
-    if isinstance(y, pd.DataFrame) or isinstance(y, pd.Series):
-        y = y.to_numpy().T
+    X, y = transform_data_type(X, y)
     current_solution = initial_solution
     momentum = np.zeros_like(initial_solution)
     squared_gradients = np.zeros_like(initial_solution)
