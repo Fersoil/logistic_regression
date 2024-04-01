@@ -6,7 +6,7 @@ from typing import Union
 from scipy.special import expit as sigmoid
 
 
-def transform_data_type(
+def transform_data_type_to_np(
     X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.DataFrame, pd.Series]
 ):
     if isinstance(X, pd.DataFrame):
@@ -14,6 +14,14 @@ def transform_data_type(
     if isinstance(y, pd.DataFrame) or isinstance(y, pd.Series):
         y = y.to_numpy().T
     return X, y
+
+
+def calculate_batch_size(X: np.ndarray, batch_size: int, batch_fraction: float):
+    assert isinstance(batch_size, int), "batch_size must be an integer"
+    if batch_fraction is not None:
+        assert 0 < batch_fraction <= 1, "batch_fraction must be between 0 and 1"
+        batch_size = int(X.shape[0] * batch_fraction)
+    return batch_size
 
 
 def mini_batch_gd(
@@ -48,12 +56,10 @@ def mini_batch_gd(
     """
 
     # initialization
-    X, y = transform_data_type(X, y)
+    X, y = transform_data_type_to_np(X, y)
     current_solution = initial_solution
 
-    if batch_fraction is not None:
-        assert 0 < batch_fraction <= 1, "batch_fraction must be between 0 and 1"
-        batch_size = int(X.shape[0] * batch_fraction)
+    batch_size = calculate_batch_size(X, batch_size, batch_fraction)
     iterations = int(X.shape[0] / batch_size)
 
     for epoch in range(max_num_epoch):
@@ -107,7 +113,7 @@ def newton(
     """
 
     # initialization
-    X, y = transform_data_type(X, y)
+    X, y = transform_data_type_to_np(X, y)
     current_solution = initial_solution
 
     for epoch in range(max_num_epoch):
@@ -149,7 +155,7 @@ def iwls(
     """
 
     # initialization
-    X, y = transform_data_type(X, y)
+    X, y = transform_data_type_to_np(X, y)
     current_solution = initial_solution
 
     for epoch in range(max_num_epoch):
@@ -208,7 +214,7 @@ def sgd(
     """
 
     # initialization
-    X, y = transform_data_type(X, y)
+    X, y = transform_data_type_to_np(X, y)
     current_solution = initial_solution
 
     for epoch in range(max_num_epoch):
@@ -269,17 +275,13 @@ def adam(
     """
 
     # initialization
-    X, y = transform_data_type(X, y)
+    X, y = transform_data_type_to_np(X, y)
     current_solution = initial_solution
     momentum = np.zeros_like(initial_solution)
     squared_gradients = np.zeros_like(initial_solution)
     counter = 0
 
-    # set batch size
-    assert isinstance(batch_size, int), "batch_size must be an integer"
-    if batch_fraction is not None:
-        assert 0 < batch_fraction <= 1, "batch_fraction must be between 0 and 1"
-        batch_size = int(X.shape[0] * batch_fraction)
+    batch_size = calculate_batch_size(X, batch_size, batch_fraction)
     iterations = int(X.shape[0] / batch_size)
 
     for epoch in range(max_num_epoch):
