@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 from typing import Union
-from regressor import LogisticRegressor
 
 from scipy.special import expit as sigmoid
 
@@ -32,7 +31,7 @@ def mini_batch_gd(
     X: Union[np.ndarray, pd.DataFrame],
     y: Union[np.ndarray, pd.DataFrame, pd.Series],
     initial_solution: np.ndarray,
-    regressor: LogisticRegressor,
+    regressor: object,
     calculate_gradient: callable,
     learning_rate: float = 0.01,
     max_num_epoch: int = 1000,
@@ -97,7 +96,7 @@ def newton(
     X: Union[np.ndarray, pd.DataFrame],
     y: Union[np.ndarray, pd.DataFrame, pd.Series],
     initial_solution: np.ndarray,
-    regressor: LogisticRegressor,
+    regressor: object,
     calculate_gradient: callable,
     calculate_hessian: callable,
     max_num_epoch: int = 1000,
@@ -148,7 +147,7 @@ def iwls(
     X: Union[np.ndarray, pd.DataFrame],
     y: Union[np.ndarray, pd.DataFrame, pd.Series],
     initial_solution: np.ndarray,
-    regressor: LogisticRegressor,
+    regressor: object,
     max_num_epoch: int = 1000,
     tolerance: float = 1e-6,
     epsilon: float = 1e-3,
@@ -208,7 +207,7 @@ def sgd(
     X: Union[np.ndarray, pd.DataFrame],
     y: Union[np.ndarray, pd.DataFrame, pd.Series],
     initial_solution: np.ndarray,
-    regressor: LogisticRegressor,
+    regressor: object,
     calculate_gradient: callable,
     learning_rate: float = 0.001,
     max_num_epoch: int = 1000,
@@ -263,7 +262,7 @@ def adam(
     X: Union[np.ndarray, pd.DataFrame],
     y: Union[np.ndarray, pd.DataFrame, pd.Series],
     initial_solution: np.ndarray,
-    regressor: LogisticRegressor,
+    regressor: object,
     calculate_gradient: callable,
     learning_rate: float = 0.001,
     momentum_decay: float = 0.9,
