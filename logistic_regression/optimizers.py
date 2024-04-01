@@ -1,20 +1,22 @@
 from abc import ABC, abstractmethod
 import numpy as np
 import pandas as pd
+from typing import Union
 
 from scipy.special import expit as sigmoid
 
 
 def mini_batch_gd(
-    X,
-    y,
-    initial_solution,
-    calculate_gradient,
-    learning_rate=0.01,
-    max_num_epoch=1000,
-    batch_size=1,
-    batch_fraction=None,
-    verbose=False,
+    X: Union[np.ndarray, pd.DataFrame],
+    y: Union[np.ndarray, pd.DataFrame],
+    initial_solution: np.ndarray,
+    calculate_gradient: callable,
+    learning_rate: float = 0.01,
+    max_num_epoch: int = 1000,
+    tolerance: float = 1e-6,
+    batch_size: int = 32,
+    batch_fraction: float = None,
+    verbose: bool = False,
 ):
     """
     Performs mini batch gradient descent optimization.
@@ -26,6 +28,7 @@ def mini_batch_gd(
     - calculate_gradient: Function to calculate the gradient.
     - learning_rate: Learning rate for updating the solution (default: 0.01).
     - max_num_iters: Maximum number of iterations (default: 1000).
+    - tolerance: Tolerance for the stopping criterion (default: 1e-6). Stops if the L inf norm of the gradient is below this value.
     - batch_size: Size of the mini batch (default: 1).
     - batch_fraction: Fraction of the data to use in each mini batch (default: None).
     - verbose: Whether to print the solution at each iteration (default: False).
@@ -41,8 +44,6 @@ def mini_batch_gd(
         y = y.to_numpy().T
     current_solution = initial_solution
 
-    # set batch size
-    assert isinstance(batch_size, int), "batch_size must be an integer"
     if batch_fraction is not None:
         assert 0 < batch_fraction <= 1, "batch_fraction must be between 0 and 1"
         batch_size = int(X.shape[0] * batch_fraction)
@@ -51,7 +52,7 @@ def mini_batch_gd(
     for epoch in range(max_num_epoch):
         N, _ = X.shape
         shuffled_idx = np.random.permutation(N)
-        
+
         X, y = X[shuffled_idx], y[shuffled_idx]
         for idx in range(iterations):
             X_selected, y_selected = (
@@ -62,17 +63,23 @@ def mini_batch_gd(
             current_solution = current_solution - learning_rate * gradient
         if verbose:
             print(f"Epoch {epoch}, solution:", current_solution)
+
+        if np.linalg.norm(gradient, ord=np.inf) < tolerance:
+            if verbose:
+                print("Early stopping criterion reached.")
+            return current_solution
     return current_solution
 
 
 def newton(
-    X,
-    y,
-    initial_solution,
-    calculate_gradient,
-    calculate_hessian,
-    max_num_epoch=1000,
-    verbose=False,
+    X: Union[np.ndarray, pd.DataFrame],
+    y: Union[np.ndarray, pd.DataFrame],
+    initial_solution: np.ndarray,
+    calculate_gradient: callable,
+    calculate_hessian: callable,
+    max_num_epoch: int = 1000,
+    tolerance: float = 1e-6,
+    verbose: bool = False,
 ):
     """
     Performs Newton method optimization using second order derivatives
@@ -84,6 +91,7 @@ def newton(
     - calculate_gradient: Function to calculate the gradient.
     - calculate_hessian: Function to calculate the Hessian.
     - max_num_epoch: Maximum number of iterations (default: 1000).
+    - tolerance: Tolerance for the stopping criterion (default: 1e-6). Stops if the L inf norm of the gradient is below this value.
     - verbose: Whether to print the solution at each iteration (default: False).
 
 
@@ -92,9 +100,9 @@ def newton(
     """
 
     # initialization
-    if type(X) is pd.DataFrame:
+    if isinstance(X, pd.DataFrame):
         X = X.to_numpy()
-    if type(y) is pd.DataFrame:
+    if isinstance(y, pd.DataFrame) or isinstance(y, pd.Series):
         y = y.to_numpy().T
     current_solution = initial_solution
 
@@ -104,18 +112,32 @@ def newton(
         current_solution = current_solution - np.linalg.inv(hessian) @ gradient
         if verbose:
             print(f"Epoch {epoch}, solution:", current_solution)
+
+        if np.linalg.norm(gradient, ord=np.inf) < tolerance:
+            if verbose:
+                print("Early stopping criterion reached.")
+            return current_solution
     return current_solution
 
 
-def iwls(X, y, initial_solution, max_num_epoch=1000, verbose=False):
+def iwls(
+    X: Union[np.ndarray, pd.DataFrame],
+    y: Union[np.ndarray, pd.DataFrame],
+    initial_solution: np.ndarray,
+    max_num_epoch: int = 1000,
+    tolerance: float = 1e-6,
+    epsilon: float = 1e-3,
+    verbose: bool = False,
+):
     """
-    Performs iteratively reweighed least squares optimization. Uses the log-likelihood loss
+    Performs iteratively reweighed least squares optimization. Uses the log-likelihood loss.
 
     Parameters:
     - X: Input data.
     - y: Target labels.
     - initial_solution: Initial solution for optimization.
     - max_num_epoch: Maximum number of iterations (default: 1000).
+    - tolerance: Tolerance for the stopping criterion (default: 1e-6). Stops if the L inf norm of the gradient is below this value.
     - verbose: Whether to print the solution at each iteration (default: False).
 
     Returns:
@@ -123,30 +145,49 @@ def iwls(X, y, initial_solution, max_num_epoch=1000, verbose=False):
     """
 
     # initialization
-    if type(X) is pd.DataFrame:
+    if isinstance(X, pd.DataFrame):
         X = X.to_numpy()
-    if type(y) is pd.DataFrame:
+    if isinstance(y, pd.DataFrame) or isinstance(y, pd.Series):
         y = y.to_numpy().T
     current_solution = initial_solution
 
     for epoch in range(max_num_epoch):
         P = sigmoid(X @ current_solution)
         W = np.diag(P * (1 - P))
+
+        # prevent singular matrix
+        W = W + epsilon * np.eye(W.shape[0])
         Z = X @ current_solution + np.linalg.inv(W) @ (y - P)
-        current_solution = np.linalg.inv(X.T @ W @ X) @ X.T @ W @ Z
+        H = X.T @ W @ X
+
+        # prevent singular matrix
+        H = H + epsilon * np.eye(H.shape[0])
+        current_solution = np.linalg.inv(H) @ X.T @ W @ Z
+
+        # maybe propose better stopping criterion here
+        gradient = -X.T @ (y - P)
+
         if verbose:
             print(f"Epoch {epoch}, solution:", current_solution)
+            print(f"norm: {np.linalg.norm(gradient, ord=np.inf)}")
+            print(f"Gradient: {gradient}")
+
+        if np.linalg.norm(gradient, ord=np.inf) < tolerance:
+            if verbose:
+                print("Early stopping criterion reached.")
+            return current_solution
     return current_solution
 
 
 def sgd(
-    X,
-    y,
-    initial_solution,
-    calculate_gradient,
-    learning_rate=0.01,
-    max_num_epoch=1000,
-    verbose=False,
+    X: Union[np.ndarray, pd.DataFrame],
+    y: Union[np.ndarray, pd.DataFrame],
+    initial_solution: np.ndarray,
+    calculate_gradient: callable,
+    learning_rate: float = 0.001,
+    max_num_epoch: int = 1000,
+    tolerance: float = 1e-6,
+    verbose: bool = False,
 ):
     """
     Performs stochastic gradient descent optimization.
@@ -156,8 +197,9 @@ def sgd(
     - y: Target labels.
     - initial_solution: Initial solution for optimization.
     - calculate_gradient: Function to calculate the gradient.
-    - learning_rate: Learning rate for updating the solution (default: 0.01).
+    - learning_rate: Learning rate for updating the solution (default: 0.001).
     - max_num_iters: Maximum number of iterations (default: 1000).
+    - tolerance: Tolerance for the stopping criterion (default: 1e-6). Stops if the L inf norm of the gradient is below this value.
     - verbose: Whether to print the solution at each iteration (default: False).
 
     Returns:
@@ -165,9 +207,9 @@ def sgd(
     """
 
     # initialization
-    if type(X) is pd.DataFrame:
+    if isinstance(X, pd.DataFrame):
         X = X.to_numpy()
-    if type(y) is pd.DataFrame:
+    if isinstance(y, pd.DataFrame) or isinstance(y, pd.Series):
         y = y.to_numpy().T
     current_solution = initial_solution
 
@@ -175,40 +217,50 @@ def sgd(
         N, _ = X.shape
         shuffled_idx = np.random.permutation(N)
         X, y = X[shuffled_idx], y[shuffled_idx]
+        grad_sum = np.zeros_like(current_solution)
         for X_selected, y_selected in zip(X, y):
             gradient = calculate_gradient(X_selected, y_selected, current_solution)
+            grad_sum += gradient
             current_solution = current_solution - learning_rate * gradient
         if verbose:
             print(f"Epoch {epoch}, solution: {current_solution}")
+
+        gradient = grad_sum / N
+        if np.linalg.norm(gradient, ord=np.inf) < tolerance:
+            if verbose:
+                print("Early stopping criterion reached.")
+            return current_solution
     return current_solution
 
 
 def adam(
-    X,
-    y,
-    initial_solution,
-    calculate_gradient,
-    learning_rate=0.01,
-    momentum_decay=0.9,
-    squared_gradient_decay=0.99,
-    max_num_epoch=1000,
-    batch_size=1,
-    batch_fraction=None,
-    epsilon=1e-8,
-    verbose=False,
+    X: Union[np.ndarray, pd.DataFrame],
+    y: Union[np.ndarray, pd.DataFrame],
+    initial_solution: np.ndarray,
+    calculate_gradient: callable,
+    learning_rate: float = 0.001,
+    momentum_decay: float = 0.9,
+    squared_gradient_decay: float = 0.99,
+    max_num_epoch: int = 1000,
+    tolerance: float = 1e-6,
+    batch_size: int = 32,
+    batch_fraction: float = None,
+    epsilon: float = 1e-8,
+    verbose: bool = False,
 ):
     """
     Performs optimization with adam algorithm.
-
+    accuracy/ balanced accuracy/ f1 score/ precision/ recall/ roc auc score/ log loss/
     Parameters:
     - X: Input data.
     - y: Target labels.
     - initial_solution: Initial solution for optimization.
     - calculate_gradient: Function to calculate the gradient.
-    - learning_rate: Learning rate for updating the solution (default: 0.01).
+    - learning_rate: Learning rate for updating the solution (default: 0.001).
     - momentum_decay: Decay rate for the momentum (default: 0.9).
     - squared_gradient_decay: Decay rate for the squared gradient (default: 0.99).
     - max_num_iters: Maximum number of iterations (default: 1000).
+    - tolerance: Tolerance for the stopping criterion (default: 1e-6). Stops if the L inf norm of the gradient is below this value.
     - batch_size: Size of the mini batch (default: 1).
     - batch_fraction: Fraction of the data to use in each mini batch (default: None).
     - epsilon: Small value to avoid division by zero (default: 1e-8).
@@ -219,9 +271,9 @@ def adam(
     """
 
     # initialization
-    if type(X) is pd.DataFrame:
+    if isinstance(X, pd.DataFrame):
         X = X.to_numpy()
-    if type(y) is pd.DataFrame:
+    if isinstance(y, pd.DataFrame) or isinstance(y, pd.Series):
         y = y.to_numpy().T
     current_solution = initial_solution
     momentum = np.zeros_like(initial_solution)
@@ -263,4 +315,10 @@ def adam(
             )
         if verbose:
             print(f"Epoch {epoch}, solution:", current_solution)
+
+        if np.linalg.norm(gradient, ord=np.inf) < tolerance:
+            if verbose:
+                print("Early stopping criterion reached.")
+            return current_solution
+
     return current_solution
