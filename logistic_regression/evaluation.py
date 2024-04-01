@@ -95,7 +95,7 @@ def plot_boundaries(X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=43)
 
     print(f"Fitting model with {X.shape[1]} features")
-    print(f"Model: {method}")
+    print(f"Model: {method}" + ('' if alg is None else  ' with algorithm: ' + alg))
 
     model.fit(X_train, y_train)
     print("Model fitted!")
@@ -115,7 +115,7 @@ def plot_boundaries(X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.
     plt.scatter(X_test[y_test==1, 0], X_test[y_test == 1, 1], s=20, edgecolor='k')
 
     plt.suptitle("Classification with decision boundaries\n", fontsize=16)
-    plt.title(f"for {method} {'' if alg is None else  'with optimization algorithm: ' + alg}\n" +
+    plt.title(f"for {method}{'' if alg is None else  ' with algorithm: ' + alg}; " +
             f"balanced accuracy: {balanced_accuracy(y_test, model.predict(X_test)):.2f}", fontsize=10)
     
 
