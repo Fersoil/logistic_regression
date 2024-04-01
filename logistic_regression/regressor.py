@@ -17,6 +17,7 @@ class LogisticRegressor:
         "include_intercept",
         "include_interactions",
         "convergence_rate",
+        "feature_names",
     ]
 
     def __init__(
@@ -48,6 +49,7 @@ class LogisticRegressor:
         self.include_interactions = include_interactions
         self.beta = None
         self.convergence_rate = None
+        self.feature_names = None
 
     def random_init_weights(self, p: int):
         self.beta = np.random.standard_normal(p)
@@ -139,7 +141,6 @@ class LogisticRegressor:
         self,
         X: Union[np.ndarray, pd.DataFrame],
         y: Union[np.ndarray, pd.DataFrame],
-        learning_rate: float = 0.01,
         max_num_epoch: int = 1000,
         tolerance: float = 1e-6,
         batch_size: int = 32,
@@ -158,7 +159,6 @@ class LogisticRegressor:
                 initial_solution=self.beta,
                 regressor=self,
                 calculate_gradient=LogisticRegressor.loss_prime,
-                learning_rate=learning_rate,
                 max_num_epoch=max_num_epoch,
                 tolerance=tolerance,
                 batch_size=batch_size,
@@ -182,7 +182,6 @@ class LogisticRegressor:
                 initial_solution=self.beta,
                 regressor=self,
                 calculate_gradient=LogisticRegressor.loss_prime,
-                learning_rate=learning_rate,
                 max_num_epoch=max_num_epoch,
                 tolerance=tolerance,
                 verbose=verbose,
@@ -194,7 +193,6 @@ class LogisticRegressor:
                 initial_solution=self.beta,
                 regressor=self,
                 calculate_gradient=LogisticRegressor.loss_prime,
-                learning_rate=learning_rate,
                 max_num_epoch=max_num_epoch,
                 tolerance=tolerance,
                 verbose=verbose,
@@ -284,7 +282,51 @@ class LogisticRegressor:
         )
         X = poly.fit_transform(X)
         X = pd.DataFrame(X, columns=new_col_names)
+        if self.feature_names is None:
+            X = self.remove_collinear_features(X, 0.8)
+        else:
+            X = X[self.feature_names]
         return X
+
+    def remove_collinear_features(self, x, threshold):
+        """
+        Objective:
+            Remove collinear features in a dataframe with a correlation coefficient
+            greater than the threshold. Removing collinear features can help a model
+            to generalize and improves the interpretability of the model.
+
+        Inputs:
+            x: features dataframe
+            threshold: features with correlations greater than this value are removed
+
+        Output:
+            dataframe that contains only the non-highly-collinear features
+        """
+
+        # Calculate the correlation matrix
+        corr_matrix = x.corr()
+        iters = range(len(corr_matrix.columns) - 1)
+        drop_cols = []
+
+        # Iterate through the correlation matrix and compare correlations
+        for i in iters:
+            for j in range(i + 1):
+                item = corr_matrix.iloc[j : (j + 1), (i + 1) : (i + 2)]
+                col = item.columns
+                row = item.index
+                val = abs(item.values)
+
+                # If correlation exceeds the threshold
+                if val >= threshold:
+                    # Print the correlated features and the correlation value
+                    # print(col.values[0], "|", row.values[0], "|", round(val[0][0], 2))
+                    drop_cols.append(col.values[0])
+
+        # Drop one of each pair of correlated columns
+        drops = set(drop_cols)
+        self.feature_names = [col for col in x.columns if col not in drops]
+        x = x.drop(columns=drops)
+        return x
 
     def predict_and_calculate_loss(self, X, y, current_beta):
         self.beta = current_beta
