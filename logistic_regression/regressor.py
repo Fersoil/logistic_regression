@@ -52,7 +52,9 @@ class LogisticRegressor:
 
     def predict_proba(self, X: Union[np.ndarray, pd.DataFrame]):
         if self.beta is None:
-            raise ValueError("Model has not been trained yet, please train the model first")
+            raise ValueError(
+                "Model has not been trained yet, please train the model first"
+            )
 
         if X.shape[1] != len(self.beta):
             # if there are no interaction or intercept terms, then we need to add them
@@ -205,21 +207,28 @@ class LogisticRegressor:
         else:
             raise ValueError("Invalid descent_algorithm")
 
-    def accuracy(self, X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.DataFrame]):
+    def accuracy(
+        self, X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.DataFrame]
+    ):
         return np.mean(self.predict(X) == y)
 
-    def balanced_accuracy(self, X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.DataFrame]):
+    def balanced_accuracy(
+        self, X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.DataFrame]
+    ):
         y = y.astype(bool)
-        
+
         negative_class = np.sum(~y)
         positive_class = np.sum(y)
 
         confusion_matrix = self.confusion_matrix(X, y)
         return 0.5 * (
-            confusion_matrix[0, 0] / positive_class + confusion_matrix[1, 1] / negative_class
+            confusion_matrix[0, 0] / positive_class
+            + confusion_matrix[1, 1] / negative_class
         )
 
-    def confusion_matrix(self, X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.DataFrame]):
+    def confusion_matrix(
+        self, X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.DataFrame]
+    ):
         y = y.astype(bool)
 
         y_hat = self.predict(X)

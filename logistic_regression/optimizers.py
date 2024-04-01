@@ -11,12 +11,12 @@ def mini_batch_gd(
     y: Union[np.ndarray, pd.DataFrame],
     initial_solution: np.ndarray,
     calculate_gradient: callable,
-    learning_rate: float=0.01,
-    max_num_epoch: int=1000,
-    tolerance: float=1e-6,
-    batch_size: int=32,
-    batch_fraction: float=None,
-    verbose: bool=False,
+    learning_rate: float = 0.01,
+    max_num_epoch: int = 1000,
+    tolerance: float = 1e-6,
+    batch_size: int = 32,
+    batch_fraction: float = None,
+    verbose: bool = False,
 ):
     """
     Performs mini batch gradient descent optimization.
@@ -52,7 +52,7 @@ def mini_batch_gd(
     for epoch in range(max_num_epoch):
         N, _ = X.shape
         shuffled_idx = np.random.permutation(N)
-        
+
         X, y = X[shuffled_idx], y[shuffled_idx]
         for idx in range(iterations):
             X_selected, y_selected = (
@@ -77,9 +77,9 @@ def newton(
     initial_solution: np.ndarray,
     calculate_gradient: callable,
     calculate_hessian: callable,
-    max_num_epoch: int=1000,
-    tolerance: float=1e-6,
-    verbose: bool=False,
+    max_num_epoch: int = 1000,
+    tolerance: float = 1e-6,
+    verbose: bool = False,
 ):
     """
     Performs Newton method optimization using second order derivatives
@@ -124,10 +124,11 @@ def iwls(
     X: Union[np.ndarray, pd.DataFrame],
     y: Union[np.ndarray, pd.DataFrame],
     initial_solution: np.ndarray,
-    max_num_epoch: int=1000, 
-    tolerance: float=1e-6,
-    epsilon: float=1e-3,
-    verbose: bool=False):
+    max_num_epoch: int = 1000,
+    tolerance: float = 1e-6,
+    epsilon: float = 1e-3,
+    verbose: bool = False,
+):
     """
     Performs iteratively reweighed least squares optimization. Uses the log-likelihood loss.
 
@@ -163,7 +164,6 @@ def iwls(
         H = H + epsilon * np.eye(H.shape[0])
         current_solution = np.linalg.inv(H) @ X.T @ W @ Z
 
-
         # maybe propose better stopping criterion here
         gradient = -X.T @ (y - P)
 
@@ -171,7 +171,6 @@ def iwls(
             print(f"Epoch {epoch}, solution:", current_solution)
             print(f"norm: {np.linalg.norm(gradient, ord=np.inf)}")
             print(f"Gradient: {gradient}")
-        
 
         if np.linalg.norm(gradient, ord=np.inf) < tolerance:
             if verbose:
@@ -185,10 +184,10 @@ def sgd(
     y: Union[np.ndarray, pd.DataFrame],
     initial_solution: np.ndarray,
     calculate_gradient: callable,
-    learning_rate: float=0.001,
-    max_num_epoch: int=1000,
-    tolerance: float=1e-6,
-    verbose: bool=False,
+    learning_rate: float = 0.001,
+    max_num_epoch: int = 1000,
+    tolerance: float = 1e-6,
+    verbose: bool = False,
 ):
     """
     Performs stochastic gradient descent optimization.
@@ -239,19 +238,19 @@ def adam(
     y: Union[np.ndarray, pd.DataFrame],
     initial_solution: np.ndarray,
     calculate_gradient: callable,
-    learning_rate: float=0.001,
-    momentum_decay: float=0.9,
-    squared_gradient_decay: float=0.99,
-    max_num_epoch: int=1000,
-    tolerance: float=1e-6,
-    batch_size: int=32,
-    batch_fraction: float=None,
-    epsilon: float=1e-8,
-    verbose: bool=False,
+    learning_rate: float = 0.001,
+    momentum_decay: float = 0.9,
+    squared_gradient_decay: float = 0.99,
+    max_num_epoch: int = 1000,
+    tolerance: float = 1e-6,
+    batch_size: int = 32,
+    batch_fraction: float = None,
+    epsilon: float = 1e-8,
+    verbose: bool = False,
 ):
     """
     Performs optimization with adam algorithm.
-
+    accuracy/ balanced accuracy/ f1 score/ precision/ recall/ roc auc score/ log loss/
     Parameters:
     - X: Input data.
     - y: Target labels.
