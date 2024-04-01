@@ -16,6 +16,7 @@ class LogisticRegressor:
         "descent_algorithm",
         "include_intercept",
         "include_interactions",
+        "convergence_rate",
     ]
 
     def __init__(
@@ -46,6 +47,7 @@ class LogisticRegressor:
         self.include_intercept = include_intercept
         self.include_interactions = include_interactions
         self.beta = None
+        self.convergence_rate = None
 
     def random_init_weights(self, p: int):
         self.beta = np.random.standard_normal(p)
@@ -150,11 +152,12 @@ class LogisticRegressor:
         self.random_init_weights(X_copy.shape[1])
 
         if self.descent_algorithm == "minibatch":
-            self.beta = mini_batch_gd(
+            self.beta, self.convergence_rate = mini_batch_gd(
                 X_copy,
                 y,
-                self.beta,
-                LogisticRegressor.loss_prime,
+                initial_solution=self.beta,
+                regressor=self,
+                calculate_gradient=LogisticRegressor.loss_prime,
                 learning_rate=learning_rate,
                 max_num_epoch=max_num_epoch,
                 tolerance=tolerance,
@@ -163,43 +166,47 @@ class LogisticRegressor:
             )
 
         elif self.descent_algorithm == "iwls":
-            self.beta = iwls(
+            self.beta, self.convergence_rate = iwls(
                 X_copy,
                 y,
-                self.beta,
+                initial_solution=self.beta,
+                regressor=self,
                 max_num_epoch=max_num_epoch,
                 tolerance=tolerance,
                 verbose=verbose,
             )
         elif self.descent_algorithm == "adam":
-            self.beta = adam(
+            self.beta, self.convergence_rate = adam(
                 X_copy,
                 y,
-                self.beta,
-                LogisticRegressor.loss_prime,
+                initial_solution=self.beta,
+                regressor=self,
+                calculate_gradient=LogisticRegressor.loss_prime,
                 learning_rate=learning_rate,
                 max_num_epoch=max_num_epoch,
                 tolerance=tolerance,
                 verbose=verbose,
             )
         elif self.descent_algorithm == "sgd":
-            self.beta = sgd(
+            self.beta, self.convergence_rate = sgd(
                 X_copy,
                 y,
-                self.beta,
-                LogisticRegressor.loss_prime,
+                initial_solution=self.beta,
+                regressor=self,
+                calculate_gradient=LogisticRegressor.loss_prime,
                 learning_rate=learning_rate,
                 max_num_epoch=max_num_epoch,
                 tolerance=tolerance,
                 verbose=verbose,
             )
         elif self.descent_algorithm == "newton":
-            self.beta = newton(
+            self.beta, self.convergence_rate = newton(
                 X_copy,
                 y,
-                self.beta,
-                LogisticRegressor.loss_prime,
-                LogisticRegressor.loss_second,
+                initial_solution=self.beta,
+                regressor=self,
+                calculate_gradient=LogisticRegressor.loss_prime,
+                calculate_hessian=LogisticRegressor.loss_second,
                 max_num_epoch=max_num_epoch,
                 tolerance=tolerance,
                 verbose=verbose,
@@ -278,3 +285,9 @@ class LogisticRegressor:
         X = poly.fit_transform(X)
         X = pd.DataFrame(X, columns=new_col_names)
         return X
+
+    def predict_and_calculate_loss(self, X, y, current_beta):
+        self.beta = current_beta
+        y_hat = self.predict_proba(X)
+        y_hat = np.clip(y_hat, 1e-10, 1 - 1e-10)
+        return self.loss(y, y_hat)
