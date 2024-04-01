@@ -156,7 +156,7 @@ class LogisticRegressor:
                 X_copy,
                 y,
                 initial_solution=self.beta,
-                calculate_loss=LogisticRegressor.loss,
+                calculate_loss=self,
                 calculate_gradient=LogisticRegressor.loss_prime,
                 learning_rate=learning_rate,
                 max_num_epoch=max_num_epoch,
@@ -170,7 +170,7 @@ class LogisticRegressor:
                 X_copy,
                 y,
                 initial_solution=self.beta,
-                calculate_loss=LogisticRegressor.loss,
+                calculate_loss=self,
                 max_num_epoch=max_num_epoch,
                 tolerance=tolerance,
                 verbose=verbose,
@@ -180,7 +180,7 @@ class LogisticRegressor:
                 X_copy,
                 y,
                 initial_solution=self.beta,
-                calculate_loss=LogisticRegressor.loss,
+                calculate_loss=self,
                 calculate_gradient=LogisticRegressor.loss_prime,
                 learning_rate=learning_rate,
                 max_num_epoch=max_num_epoch,
@@ -192,7 +192,7 @@ class LogisticRegressor:
                 X_copy,
                 y,
                 initial_solution=self.beta,
-                calculate_loss=LogisticRegressor.loss,
+                calculate_loss=self,
                 calculate_gradient=LogisticRegressor.loss_prime,
                 learning_rate=learning_rate,
                 max_num_epoch=max_num_epoch,
@@ -204,7 +204,7 @@ class LogisticRegressor:
                 X_copy,
                 y,
                 initial_solution=self.beta,
-                calculate_loss=LogisticRegressor.loss,
+                calculate_loss=self,
                 calculate_gradient=LogisticRegressor.loss_prime,
                 calculate_hessian=LogisticRegressor.loss_second,
                 max_num_epoch=max_num_epoch,
@@ -285,3 +285,8 @@ class LogisticRegressor:
         X = poly.fit_transform(X)
         X = pd.DataFrame(X, columns=new_col_names)
         return X
+
+    def predict_and_calculate_loss(self, X, y, current_beta):
+        self.beta = current_beta
+        y_hat = self.predict(X)
+        return self.loss(y, y_hat)
