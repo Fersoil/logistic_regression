@@ -138,7 +138,7 @@ class LogisticRegressor:
         X: Union[np.ndarray, pd.DataFrame],
         y: Union[np.ndarray, pd.DataFrame],
         learning_rate: float = 0.01,
-        max_num_epoch: int = 1000,
+        max_num_epoch: int = 500,
         tolerance: float = 1e-6,
         batch_size: int = 32,
         verbose: bool = False,
