@@ -24,6 +24,10 @@ def calculate_batch_size(X: np.ndarray, batch_size: int, batch_fraction: float):
     return batch_size
 
 
+def stop_criterion(gradient, tolerance):
+    return np.linalg.norm(gradient, ord=np.inf) < tolerance
+
+
 def mini_batch_gd(
     X: Union[np.ndarray, pd.DataFrame],
     y: Union[np.ndarray, pd.DataFrame, pd.Series],
@@ -77,9 +81,8 @@ def mini_batch_gd(
         if verbose:
             print(f"Epoch {epoch}, solution:", current_solution)
 
-        if np.linalg.norm(gradient, ord=np.inf) < tolerance:
-            if verbose:
-                print("Early stopping criterion reached.")
+        if stop_criterion(gradient, tolerance):
+            print(f"Early stopping criterion reached at epoch {epoch}.")
             return current_solution
     return current_solution
 
@@ -123,9 +126,8 @@ def newton(
         if verbose:
             print(f"Epoch {epoch}, solution:", current_solution)
 
-        if np.linalg.norm(gradient, ord=np.inf) < tolerance:
-            if verbose:
-                print("Early stopping criterion reached.")
+        if stop_criterion(gradient, tolerance):
+            print(f"Early stopping criterion reached at epoch {epoch}.")
             return current_solution
     return current_solution
 
@@ -179,9 +181,8 @@ def iwls(
             print(f"norm: {np.linalg.norm(gradient, ord=np.inf)}")
             print(f"Gradient: {gradient}")
 
-        if np.linalg.norm(gradient, ord=np.inf) < tolerance:
-            if verbose:
-                print("Early stopping criterion reached.")
+        if stop_criterion(gradient, tolerance):
+            print(f"Early stopping criterion reached at epoch {epoch}.")
             return current_solution
     return current_solution
 
@@ -230,9 +231,8 @@ def sgd(
             print(f"Epoch {epoch}, solution: {current_solution}")
 
         gradient = grad_sum / N
-        if np.linalg.norm(gradient, ord=np.inf) < tolerance:
-            if verbose:
-                print("Early stopping criterion reached.")
+        if stop_criterion(gradient, tolerance):
+            print(f"Early stopping criterion reached at epoch {epoch}.")
             return current_solution
     return current_solution
 
@@ -313,9 +313,8 @@ def adam(
         if verbose:
             print(f"Epoch {epoch}, solution:", current_solution)
 
-        if np.linalg.norm(gradient, ord=np.inf) < tolerance:
-            if verbose:
-                print("Early stopping criterion reached.")
+        if stop_criterion(gradient, tolerance):
+            print(f"Early stopping criterion reached at epoch {epoch}.")
             return current_solution
 
     return current_solution
