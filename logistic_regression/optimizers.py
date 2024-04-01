@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 import numpy as np
 import pandas as pd
 from typing import Union
@@ -32,6 +31,7 @@ def mini_batch_gd(
     X: Union[np.ndarray, pd.DataFrame],
     y: Union[np.ndarray, pd.DataFrame, pd.Series],
     initial_solution: np.ndarray,
+    calculate_loss: callable,
     calculate_gradient: callable,
     learning_rate: float = 0.01,
     max_num_epoch: int = 1000,
@@ -65,6 +65,7 @@ def mini_batch_gd(
 
     batch_size = calculate_batch_size(X, batch_size, batch_fraction)
     iterations = int(X.shape[0] / batch_size)
+    loss_after_epoch = [calculate_loss(X, y, current_solution)]
 
     for epoch in range(max_num_epoch):
         N, _ = X.shape
@@ -78,19 +79,22 @@ def mini_batch_gd(
             )
             gradient = calculate_gradient(X_selected, y_selected, current_solution)
             current_solution = current_solution - learning_rate * gradient
+
+        loss_after_epoch.append(calculate_loss(X, y, current_solution))
         if verbose:
             print(f"Epoch {epoch}, solution:", current_solution)
 
         if stop_criterion(gradient, tolerance):
             print(f"Early stopping criterion reached at epoch {epoch}.")
-            return current_solution
-    return current_solution
+            return current_solution, loss_after_epoch
+    return current_solution, loss_after_epoch
 
 
 def newton(
     X: Union[np.ndarray, pd.DataFrame],
     y: Union[np.ndarray, pd.DataFrame, pd.Series],
     initial_solution: np.ndarray,
+    calculate_loss: callable,
     calculate_gradient: callable,
     calculate_hessian: callable,
     max_num_epoch: int = 1000,
@@ -118,24 +122,28 @@ def newton(
     # initialization
     X, y = transform_data_type_to_np(X, y)
     current_solution = initial_solution
+    loss_after_epoch = [calculate_loss(X, y, current_solution)]
 
     for epoch in range(max_num_epoch):
         gradient = calculate_gradient(X, y, current_solution)
         hessian = calculate_hessian(X, y, current_solution)
         current_solution = current_solution - np.linalg.inv(hessian) @ gradient
+
+        loss_after_epoch.append(calculate_loss(X, y, current_solution))
         if verbose:
             print(f"Epoch {epoch}, solution:", current_solution)
 
         if stop_criterion(gradient, tolerance):
             print(f"Early stopping criterion reached at epoch {epoch}.")
-            return current_solution
-    return current_solution
+            return current_solution, loss_after_epoch
+    return current_solution, loss_after_epoch
 
 
 def iwls(
     X: Union[np.ndarray, pd.DataFrame],
     y: Union[np.ndarray, pd.DataFrame, pd.Series],
     initial_solution: np.ndarray,
+    calculate_loss: callable,
     max_num_epoch: int = 1000,
     tolerance: float = 1e-6,
     epsilon: float = 1e-3,
@@ -159,6 +167,7 @@ def iwls(
     # initialization
     X, y = transform_data_type_to_np(X, y)
     current_solution = initial_solution
+    loss_after_epoch = [calculate_loss(X, y, current_solution)]
 
     for epoch in range(max_num_epoch):
         P = sigmoid(X @ current_solution)
@@ -176,6 +185,7 @@ def iwls(
         # maybe propose better stopping criterion here
         gradient = -X.T @ (y - P)
 
+        loss_after_epoch.append(calculate_loss(X, y, current_solution))
         if verbose:
             print(f"Epoch {epoch}, solution:", current_solution)
             print(f"norm: {np.linalg.norm(gradient, ord=np.inf)}")
@@ -183,14 +193,15 @@ def iwls(
 
         if stop_criterion(gradient, tolerance):
             print(f"Early stopping criterion reached at epoch {epoch}.")
-            return current_solution
-    return current_solution
+            return current_solution, loss_after_epoch
+    return current_solution, loss_after_epoch
 
 
 def sgd(
     X: Union[np.ndarray, pd.DataFrame],
     y: Union[np.ndarray, pd.DataFrame, pd.Series],
     initial_solution: np.ndarray,
+    calculate_loss: callable,
     calculate_gradient: callable,
     learning_rate: float = 0.001,
     max_num_epoch: int = 1000,
@@ -217,6 +228,7 @@ def sgd(
     # initialization
     X, y = transform_data_type_to_np(X, y)
     current_solution = initial_solution
+    loss_after_epoch = [calculate_loss(X, y, current_solution)]
 
     for epoch in range(max_num_epoch):
         N, _ = X.shape
@@ -227,20 +239,22 @@ def sgd(
             gradient = calculate_gradient(X_selected, y_selected, current_solution)
             grad_sum += gradient
             current_solution = current_solution - learning_rate * gradient
+        loss_after_epoch.append(calculate_loss(X, y, current_solution))
         if verbose:
             print(f"Epoch {epoch}, solution: {current_solution}")
 
         gradient = grad_sum / N
         if stop_criterion(gradient, tolerance):
             print(f"Early stopping criterion reached at epoch {epoch}.")
-            return current_solution
-    return current_solution
+            return current_solution, loss_after_epoch
+    return current_solution, loss_after_epoch
 
 
 def adam(
     X: Union[np.ndarray, pd.DataFrame],
     y: Union[np.ndarray, pd.DataFrame, pd.Series],
     initial_solution: np.ndarray,
+    calculate_loss: callable,
     calculate_gradient: callable,
     learning_rate: float = 0.001,
     momentum_decay: float = 0.9,
@@ -280,6 +294,7 @@ def adam(
     momentum = np.zeros_like(initial_solution)
     squared_gradients = np.zeros_like(initial_solution)
     counter = 0
+    loss_after_epoch = [calculate_loss(X, y, current_solution)]
 
     batch_size = calculate_batch_size(X, batch_size, batch_fraction)
     iterations = int(X.shape[0] / batch_size)
@@ -310,11 +325,12 @@ def adam(
             current_solution = current_solution - learning_rate * corrected_momentum / (
                 np.sqrt(corrected_squared_gradients) + epsilon
             )
+        loss_after_epoch.append(calculate_loss(X, y, current_solution))
         if verbose:
             print(f"Epoch {epoch}, solution:", current_solution)
 
         if stop_criterion(gradient, tolerance):
             print(f"Early stopping criterion reached at epoch {epoch}.")
-            return current_solution
+            return current_solution, loss_after_epoch
 
-    return current_solution
+    return current_solution, loss_after_epoch
