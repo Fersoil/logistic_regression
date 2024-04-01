@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from typing import Union
+import time
 
 from scipy.special import expit as sigmoid
 
@@ -23,8 +24,14 @@ def calculate_batch_size(X: np.ndarray, batch_size: int, batch_fraction: float):
     return batch_size
 
 
-def stop_criterion(gradient, tolerance):
-    return np.linalg.norm(gradient, ord=np.inf) < tolerance
+def stop_criterion(gradient, tolerance, epoch, starting_time):
+    if time.perf_counter() - starting_time > 60:
+        print(f"Time run our at epoch {epoch}.")
+        return True
+    elif np.linalg.norm(gradient, ord=np.inf) < tolerance:
+        print(f"Early stopping criterion reached at epoch {epoch}.")
+        return True
+    return False
 
 
 def mini_batch_gd(
@@ -66,6 +73,7 @@ def mini_batch_gd(
     batch_size = calculate_batch_size(X, batch_size, batch_fraction)
     iterations = int(X.shape[0] / batch_size)
     loss_after_epoch = [regressor.predict_and_calculate_loss(X, y, current_solution)]
+    starting_time = time.perf_counter()
 
     for epoch in range(max_num_epoch):
         N, _ = X.shape
@@ -86,9 +94,8 @@ def mini_batch_gd(
         if verbose:
             print(f"Epoch {epoch}, solution:", current_solution)
 
-        if stop_criterion(gradient, tolerance):
-            print(f"Early stopping criterion reached at epoch {epoch}.")
-            return current_solution, loss_after_epoch
+        if stop_criterion(gradient, tolerance, epoch, starting_time):
+            break
     return current_solution, loss_after_epoch
 
 
@@ -125,6 +132,7 @@ def newton(
     X, y = transform_data_type_to_np(X, y)
     current_solution = initial_solution
     loss_after_epoch = [regressor.predict_and_calculate_loss(X, y, current_solution)]
+    starting_time = time.perf_counter()
 
     for epoch in range(max_num_epoch):
         gradient = calculate_gradient(X, y, current_solution)
@@ -137,9 +145,8 @@ def newton(
         if verbose:
             print(f"Epoch {epoch}, solution:", current_solution)
 
-        if stop_criterion(gradient, tolerance):
-            print(f"Early stopping criterion reached at epoch {epoch}.")
-            return current_solution, loss_after_epoch
+        if stop_criterion(gradient, tolerance, epoch, starting_time):
+            break
     return current_solution, loss_after_epoch
 
 
@@ -172,6 +179,7 @@ def iwls(
     X, y = transform_data_type_to_np(X, y)
     current_solution = initial_solution
     loss_after_epoch = [regressor.predict_and_calculate_loss(X, y, current_solution)]
+    starting_time = time.perf_counter()
 
     for epoch in range(max_num_epoch):
         P = sigmoid(X @ current_solution)
@@ -197,9 +205,8 @@ def iwls(
             print(f"norm: {np.linalg.norm(gradient, ord=np.inf)}")
             print(f"Gradient: {gradient}")
 
-        if stop_criterion(gradient, tolerance):
-            print(f"Early stopping criterion reached at epoch {epoch}.")
-            return current_solution, loss_after_epoch
+        if stop_criterion(gradient, tolerance, epoch, starting_time):
+            break
     return current_solution, loss_after_epoch
 
 
@@ -235,6 +242,7 @@ def sgd(
     X, y = transform_data_type_to_np(X, y)
     current_solution = initial_solution
     loss_after_epoch = [regressor.predict_and_calculate_loss(X, y, current_solution)]
+    starting_time = time.perf_counter()
 
     for epoch in range(max_num_epoch):
         N, _ = X.shape
@@ -252,9 +260,8 @@ def sgd(
             print(f"Epoch {epoch}, solution: {current_solution}")
 
         gradient = grad_sum / N
-        if stop_criterion(gradient, tolerance):
-            print(f"Early stopping criterion reached at epoch {epoch}.")
-            return current_solution, loss_after_epoch
+        if stop_criterion(gradient, tolerance, epoch, starting_time):
+            break
     return current_solution, loss_after_epoch
 
 
@@ -303,6 +310,7 @@ def adam(
     squared_gradients = np.zeros_like(initial_solution)
     counter = 0
     loss_after_epoch = [regressor.predict_and_calculate_loss(X, y, current_solution)]
+    starting_time = time.perf_counter()
 
     batch_size = calculate_batch_size(X, batch_size, batch_fraction)
     iterations = int(X.shape[0] / batch_size)
@@ -339,8 +347,7 @@ def adam(
         if verbose:
             print(f"Epoch {epoch}, solution:", current_solution)
 
-        if stop_criterion(gradient, tolerance):
-            print(f"Early stopping criterion reached at epoch {epoch}.")
-            return current_solution, loss_after_epoch
+        if stop_criterion(gradient, tolerance, epoch, starting_time):
+            break
 
     return current_solution, loss_after_epoch
