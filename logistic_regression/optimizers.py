@@ -25,7 +25,7 @@ def calculate_batch_size(X: np.ndarray, batch_size: int, batch_fraction: float):
 
 
 def stop_criterion(gradient, tolerance, epoch, starting_time):
-    if time.perf_counter() - starting_time > 60:
+    if time.perf_counter() - starting_time > 120:
         print(f"Time run our at epoch {epoch}.")
         return True
     elif np.linalg.norm(gradient, ord=np.inf) < tolerance:
@@ -108,6 +108,7 @@ def newton(
     calculate_hessian: callable,
     max_num_epoch: int = 1000,
     tolerance: float = 1e-6,
+    epsilon: float = 1e-6,
     verbose: bool = False,
 ):
     """
@@ -136,7 +137,7 @@ def newton(
 
     for epoch in range(max_num_epoch):
         gradient = calculate_gradient(X, y, current_solution)
-        hessian = calculate_hessian(X, y, current_solution)
+        hessian = calculate_hessian(X, y, current_solution) + epsilon * np.eye(X.shape[1])
         current_solution = current_solution - np.linalg.inv(hessian) @ gradient
 
         loss_after_epoch.append(
@@ -157,7 +158,7 @@ def iwls(
     regressor: object,
     max_num_epoch: int = 1000,
     tolerance: float = 1e-6,
-    epsilon: float = 1e-3,
+    epsilon: float = 1e-6,
     verbose: bool = False,
 ):
     """
@@ -183,10 +184,11 @@ def iwls(
 
     for epoch in range(max_num_epoch):
         P = sigmoid(X @ current_solution)
+        # prevent singular matrix
+        P = np.clip(P, epsilon, 1 - epsilon)
         W = np.diag(P * (1 - P))
 
-        # prevent singular matrix
-        W = W + epsilon * np.eye(W.shape[0])
+       
         Z = X @ current_solution + np.linalg.inv(W) @ (y - P)
         H = X.T @ W @ X
 
@@ -273,7 +275,7 @@ def adam(
     calculate_gradient: callable,
     learning_rate: float = 0.001,
     momentum_decay: float = 0.9,
-    squared_gradient_decay: float = 0.99,
+    squared_gradient_decay: float = 0.999,
     max_num_epoch: int = 1000,
     tolerance: float = 1e-6,
     batch_size: int = 32,
