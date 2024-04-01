@@ -67,7 +67,7 @@ def compare_methods(X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.
 
     return results
 
-def plot_boundaries(X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.DataFrame], method: Literal["decision tree", "random forest", "LDA", "QDA", "logistic regression"], alg: Literal[None, "iwls", "adam", "sgd"] = None, test_size = 0.2):
+def plot_boundaries(X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.DataFrame], method: Literal["decision tree", "random forest", "LDA", "QDA", "logistic regression"], alg: Literal[None, "iwls", "adam", "sgd"] = None, test_size = 0.2, save_plot = False):
     if method == "LDA":
         model = LinearDiscriminantAnalysis()
 
@@ -119,8 +119,9 @@ def plot_boundaries(X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.
             f"balanced accuracy: {balanced_accuracy(y_test, model.predict(X_test)):.2f}", fontsize=10)
     
 
-
     plt.legend(["y = 0", "y = 1"])
+    if save_plot:
+        plt.savefig(f"plots/{method}{'' if alg is None else f'_{alg}'}.png")
     plt.show()
         
 
