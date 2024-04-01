@@ -235,8 +235,10 @@ class LogisticRegressor:
         self, X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.DataFrame]
     ):
         y = y.astype(bool)
-
+        if self.include_interactions:
+            y = y.reset_index(drop=True)
         y_hat = self.predict(X)
+
         tp = np.sum(y_hat & y)
         tn = np.sum(~y_hat & ~y)
         fp = np.sum(y_hat & ~y)
