@@ -67,7 +67,7 @@ def compare_methods(X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.
 
     return results
 
-def plot_boundaries(X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.DataFrame], method: Literal["decision tree", "random forest", "LDA", "QDA", "logistic regression"], alg: Literal[None, "iwls", "adam", "sgd"] = None, test_size = 0.2, save_plot = False):
+def plot_boundaries(X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.DataFrame], method: Literal["decision tree", "random forest", "LDA", "QDA", "logistic regression"], alg: Literal[None, "iwls", "adam", "sgd"] = None, interactions = False, test_size = 0.2, save_plot = False):
     if method == "LDA":
         model = LinearDiscriminantAnalysis()
 
@@ -84,7 +84,7 @@ def plot_boundaries(X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.
         if alg is None:
             raise ValueError("Please specify the algorithm for the logistic regression")
         
-        model = LogisticRegressor(descent_algorithm=alg)
+        model = LogisticRegressor(descent_algorithm=alg, include_interactions=interactions)
     else:
         raise ValueError("Invalid method " + method )
 
@@ -115,13 +115,13 @@ def plot_boundaries(X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.
     plt.scatter(X_test[y_test==1, 0], X_test[y_test == 1, 1], s=20, edgecolor='k')
 
     plt.suptitle("Classification with decision boundaries\n", fontsize=16)
-    plt.title(f"for {method}{'' if alg is None else  ' with algorithm: ' + alg}; " +
+    plt.title(f"for {method}{'' if alg is None else  ' with algorithm: ' + alg}{' with interactions' if interactions else  ''}; " +
             f"balanced accuracy: {balanced_accuracy(y_test, model.predict(X_test)):.2f}", fontsize=10)
     
 
     plt.legend(["y = 0", "y = 1"])
     if save_plot:
-        plt.savefig(f"plots/{method}{'' if alg is None else f'_{alg}'}.png")
+        plt.savefig(f"plots/artificial_data/{method}{'' if alg is None else f'_{alg}'}{'' if not interactions else '_inter'}.png")
     plt.show()
         
 
