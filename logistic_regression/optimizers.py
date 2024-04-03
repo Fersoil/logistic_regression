@@ -40,8 +40,8 @@ def mini_batch_gd(
     initial_solution: np.ndarray,
     regressor: object,
     calculate_gradient: callable,
-    learning_rate: float = 0.01,
-    max_num_epoch: int = 1000,
+    learning_rate: float = 0.001,
+    max_num_epoch: int = 500,
     tolerance: float = 1e-6,
     batch_size: int = 32,
     batch_fraction: float = None,
@@ -74,7 +74,6 @@ def mini_batch_gd(
     iterations = int(X.shape[0] / batch_size)
     loss_after_epoch = [regressor.predict_and_calculate_loss(X, y, current_solution)]
     starting_time = time.perf_counter()
-
     for epoch in range(max_num_epoch):
         N, _ = X.shape
         shuffled_idx = np.random.permutation(N)
@@ -86,6 +85,7 @@ def mini_batch_gd(
                 y[idx * batch_size : (idx + 1) * batch_size],
             )
             gradient = calculate_gradient(X_selected, y_selected, current_solution)
+            gradient = gradient / batch_size
             current_solution = current_solution - learning_rate * gradient
 
         loss_after_epoch.append(
@@ -106,7 +106,7 @@ def newton(
     regressor: object,
     calculate_gradient: callable,
     calculate_hessian: callable,
-    max_num_epoch: int = 1000,
+    max_num_epoch: int = 500,
     tolerance: float = 1e-6,
     verbose: bool = False,
 ):
@@ -155,7 +155,7 @@ def iwls(
     y: Union[np.ndarray, pd.DataFrame, pd.Series],
     initial_solution: np.ndarray,
     regressor: object,
-    max_num_epoch: int = 1000,
+    max_num_epoch: int = 500,
     tolerance: float = 1e-6,
     epsilon: float = 1e-3,
     verbose: bool = False,
@@ -217,7 +217,7 @@ def sgd(
     regressor: object,
     calculate_gradient: callable,
     learning_rate: float = 0.001,
-    max_num_epoch: int = 1000,
+    max_num_epoch: int = 500,
     tolerance: float = 1e-6,
     verbose: bool = False,
 ):
@@ -274,7 +274,7 @@ def adam(
     learning_rate: float = 0.001,
     momentum_decay: float = 0.9,
     squared_gradient_decay: float = 0.99,
-    max_num_epoch: int = 1000,
+    max_num_epoch: int = 500,
     tolerance: float = 1e-6,
     batch_size: int = 32,
     batch_fraction: float = None,
