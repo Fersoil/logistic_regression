@@ -12,5 +12,4 @@
 6. [AIDS Clinical Trials (23 features)](https://archive.ics.uci.edu/dataset/890/aids+clinical+trials+group+study+175)
 7. [Heart Disease Health Indicators Dataset (21 features)](https://www.kaggle.com/datasets/alexteboul/heart-disease-health-indicators-dataset)
 8. [Customer Personality Analysis (29 features)](https://www.kaggle.com/datasets/imakash3011/customer-personality-analysis)
-9. [Web Page Phishing Dataset (20 features)](https://www.kaggle.com/datasets/danielfernandon/web-page-phishing-dataset)
-10. [Dry bean - isn't binary but classes can be merged (17 features)](https://www.kaggle.com/datasets/nimapourmoradi/dry-bean-dataset-classification)
+9. [Dry bean - isn't binary but classes were merged (17 features)](https://www.kaggle.com/datasets/nimapourmoradi/dry-bean-dataset-classification)
