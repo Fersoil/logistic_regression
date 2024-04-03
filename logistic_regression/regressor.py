@@ -16,6 +16,8 @@ class LogisticRegressor:
         "descent_algorithm",
         "include_intercept",
         "include_interactions",
+        "convergence_rate",
+        "feature_names",
     ]
 
     def __init__(
@@ -46,6 +48,8 @@ class LogisticRegressor:
         self.include_intercept = include_intercept
         self.include_interactions = include_interactions
         self.beta = None
+        self.convergence_rate = None
+        self.feature_names = None
 
     def random_init_weights(self, p: int):
         self.beta = np.random.standard_normal(p)
@@ -138,7 +142,7 @@ class LogisticRegressor:
         X: Union[np.ndarray, pd.DataFrame],
         y: Union[np.ndarray, pd.DataFrame],
         learning_rate: float = 0.01,
-        max_num_epoch: int = 1000,
+        max_num_epoch: int = 500,
         tolerance: float = 1e-6,
         batch_size: int = 32,
         verbose: bool = False,
@@ -150,12 +154,12 @@ class LogisticRegressor:
         self.random_init_weights(X_copy.shape[1])
 
         if self.descent_algorithm == "minibatch":
-            self.beta = mini_batch_gd(
+            self.beta, self.convergence_rate = mini_batch_gd(
                 X_copy,
                 y,
-                self.beta,
-                LogisticRegressor.loss_prime,
-                learning_rate=learning_rate,
+                initial_solution=self.beta,
+                regressor=self,
+                calculate_gradient=LogisticRegressor.loss_prime,
                 max_num_epoch=max_num_epoch,
                 tolerance=tolerance,
                 batch_size=batch_size,
@@ -163,43 +167,45 @@ class LogisticRegressor:
             )
 
         elif self.descent_algorithm == "iwls":
-            self.beta = iwls(
+            self.beta, self.convergence_rate = iwls(
                 X_copy,
                 y,
-                self.beta,
+                initial_solution=self.beta,
+                regressor=self,
                 max_num_epoch=max_num_epoch,
                 tolerance=tolerance,
                 verbose=verbose,
             )
         elif self.descent_algorithm == "adam":
-            self.beta = adam(
+            self.beta, self.convergence_rate = adam(
                 X_copy,
                 y,
-                self.beta,
-                LogisticRegressor.loss_prime,
-                learning_rate=learning_rate,
+                initial_solution=self.beta,
+                regressor=self,
+                calculate_gradient=LogisticRegressor.loss_prime,
                 max_num_epoch=max_num_epoch,
                 tolerance=tolerance,
                 verbose=verbose,
             )
         elif self.descent_algorithm == "sgd":
-            self.beta = sgd(
+            self.beta, self.convergence_rate = sgd(
                 X_copy,
                 y,
-                self.beta,
-                LogisticRegressor.loss_prime,
-                learning_rate=learning_rate,
+                initial_solution=self.beta,
+                regressor=self,
+                calculate_gradient=LogisticRegressor.loss_prime,
                 max_num_epoch=max_num_epoch,
                 tolerance=tolerance,
                 verbose=verbose,
             )
         elif self.descent_algorithm == "newton":
-            self.beta = newton(
+            self.beta, self.convergence_rate = newton(
                 X_copy,
                 y,
-                self.beta,
-                LogisticRegressor.loss_prime,
-                LogisticRegressor.loss_second,
+                initial_solution=self.beta,
+                regressor=self,
+                calculate_gradient=LogisticRegressor.loss_prime,
+                calculate_hessian=LogisticRegressor.loss_second,
                 max_num_epoch=max_num_epoch,
                 tolerance=tolerance,
                 verbose=verbose,
@@ -230,8 +236,10 @@ class LogisticRegressor:
         self, X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.DataFrame]
     ):
         y = y.astype(bool)
-
+        if self.include_interactions:
+            y = y.reset_index(drop=True)
         y_hat = self.predict(X)
+
         tp = np.sum(y_hat & y)
         tn = np.sum(~y_hat & ~y)
         fp = np.sum(y_hat & ~y)
@@ -277,4 +285,54 @@ class LogisticRegressor:
         )
         X = poly.fit_transform(X)
         X = pd.DataFrame(X, columns=new_col_names)
+        if self.feature_names is None:
+            X = self.remove_collinear_features(X, 0.8)
+        else:
+            X = X[self.feature_names]
         return X
+
+    def remove_collinear_features(self, x, threshold):
+        """
+        Objective:
+            Remove collinear features in a dataframe with a correlation coefficient
+            greater than the threshold. Removing collinear features can help a model
+            to generalize and improves the interpretability of the model.
+
+        Inputs:
+            x: features dataframe
+            threshold: features with correlations greater than this value are removed
+
+        Output:
+            dataframe that contains only the non-highly-collinear features
+        """
+
+        # Calculate the correlation matrix
+        corr_matrix = x.corr()
+        iters = range(len(corr_matrix.columns) - 1)
+        drop_cols = []
+
+        # Iterate through the correlation matrix and compare correlations
+        for i in iters:
+            for j in range(i + 1):
+                item = corr_matrix.iloc[j : (j + 1), (i + 1) : (i + 2)]
+                col = item.columns
+                row = item.index
+                val = abs(item.values)
+
+                # If correlation exceeds the threshold
+                if val >= threshold:
+                    # Print the correlated features and the correlation value
+                    # print(col.values[0], "|", row.values[0], "|", round(val[0][0], 2))
+                    drop_cols.append(col.values[0])
+
+        # Drop one of each pair of correlated columns
+        drops = set(drop_cols)
+        self.feature_names = [col for col in x.columns if col not in drops]
+        x = x.drop(columns=drops)
+        return x
+
+    def predict_and_calculate_loss(self, X, y, current_beta):
+        self.beta = current_beta
+        y_hat = self.predict_proba(X)
+        y_hat = np.clip(y_hat, 1e-10, 1 - 1e-10)
+        return self.loss(y, y_hat)

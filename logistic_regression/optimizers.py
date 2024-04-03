@@ -1,18 +1,47 @@
-from abc import ABC, abstractmethod
 import numpy as np
 import pandas as pd
 from typing import Union
+import time
 
 from scipy.special import expit as sigmoid
 
 
+def transform_data_type_to_np(
+    X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.DataFrame, pd.Series]
+):
+    if isinstance(X, pd.DataFrame):
+        X = X.to_numpy()
+    if isinstance(y, pd.DataFrame) or isinstance(y, pd.Series):
+        y = y.to_numpy().T
+    return X, y
+
+
+def calculate_batch_size(X: np.ndarray, batch_size: int, batch_fraction: float):
+    assert isinstance(batch_size, int), "batch_size must be an integer"
+    if batch_fraction is not None:
+        assert 0 < batch_fraction <= 1, "batch_fraction must be between 0 and 1"
+        batch_size = int(X.shape[0] * batch_fraction)
+    return batch_size
+
+
+def stop_criterion(gradient, tolerance, epoch, starting_time):
+    if time.perf_counter() - starting_time > 60:
+        print(f"Time run our at epoch {epoch}.")
+        return True
+    elif np.linalg.norm(gradient, ord=np.inf) < tolerance:
+        print(f"Early stopping criterion reached at epoch {epoch}.")
+        return True
+    return False
+
+
 def mini_batch_gd(
     X: Union[np.ndarray, pd.DataFrame],
-    y: Union[np.ndarray, pd.DataFrame],
+    y: Union[np.ndarray, pd.DataFrame, pd.Series],
     initial_solution: np.ndarray,
+    regressor: object,
     calculate_gradient: callable,
-    learning_rate: float = 0.01,
-    max_num_epoch: int = 1000,
+    learning_rate: float = 0.001,
+    max_num_epoch: int = 500,
     tolerance: float = 1e-6,
     batch_size: int = 32,
     batch_fraction: float = None,
@@ -38,17 +67,13 @@ def mini_batch_gd(
     """
 
     # initialization
-    if isinstance(X, pd.DataFrame):
-        X = X.to_numpy()
-    if isinstance(y, pd.DataFrame) or isinstance(y, pd.Series):
-        y = y.to_numpy().T
+    X, y = transform_data_type_to_np(X, y)
     current_solution = initial_solution
 
-    if batch_fraction is not None:
-        assert 0 < batch_fraction <= 1, "batch_fraction must be between 0 and 1"
-        batch_size = int(X.shape[0] * batch_fraction)
+    batch_size = calculate_batch_size(X, batch_size, batch_fraction)
     iterations = int(X.shape[0] / batch_size)
-
+    loss_after_epoch = [regressor.predict_and_calculate_loss(X, y, current_solution)]
+    starting_time = time.perf_counter()
     for epoch in range(max_num_epoch):
         N, _ = X.shape
         shuffled_idx = np.random.permutation(N)
@@ -60,24 +85,28 @@ def mini_batch_gd(
                 y[idx * batch_size : (idx + 1) * batch_size],
             )
             gradient = calculate_gradient(X_selected, y_selected, current_solution)
+            gradient = gradient / batch_size
             current_solution = current_solution - learning_rate * gradient
+
+        loss_after_epoch.append(
+            regressor.predict_and_calculate_loss(X, y, current_solution)
+        )
         if verbose:
             print(f"Epoch {epoch}, solution:", current_solution)
 
-        if np.linalg.norm(gradient, ord=np.inf) < tolerance:
-            if verbose:
-                print("Early stopping criterion reached.")
-            return current_solution
-    return current_solution
+        if stop_criterion(gradient, tolerance, epoch, starting_time):
+            break
+    return current_solution, loss_after_epoch
 
 
 def newton(
     X: Union[np.ndarray, pd.DataFrame],
-    y: Union[np.ndarray, pd.DataFrame],
+    y: Union[np.ndarray, pd.DataFrame, pd.Series],
     initial_solution: np.ndarray,
+    regressor: object,
     calculate_gradient: callable,
     calculate_hessian: callable,
-    max_num_epoch: int = 1000,
+    max_num_epoch: int = 500,
     tolerance: float = 1e-6,
     verbose: bool = False,
 ):
@@ -100,31 +129,33 @@ def newton(
     """
 
     # initialization
-    if isinstance(X, pd.DataFrame):
-        X = X.to_numpy()
-    if isinstance(y, pd.DataFrame) or isinstance(y, pd.Series):
-        y = y.to_numpy().T
+    X, y = transform_data_type_to_np(X, y)
     current_solution = initial_solution
+    loss_after_epoch = [regressor.predict_and_calculate_loss(X, y, current_solution)]
+    starting_time = time.perf_counter()
 
     for epoch in range(max_num_epoch):
         gradient = calculate_gradient(X, y, current_solution)
         hessian = calculate_hessian(X, y, current_solution)
         current_solution = current_solution - np.linalg.inv(hessian) @ gradient
+
+        loss_after_epoch.append(
+            regressor.predict_and_calculate_loss(X, y, current_solution)
+        )
         if verbose:
             print(f"Epoch {epoch}, solution:", current_solution)
 
-        if np.linalg.norm(gradient, ord=np.inf) < tolerance:
-            if verbose:
-                print("Early stopping criterion reached.")
-            return current_solution
-    return current_solution
+        if stop_criterion(gradient, tolerance, epoch, starting_time):
+            break
+    return current_solution, loss_after_epoch
 
 
 def iwls(
     X: Union[np.ndarray, pd.DataFrame],
-    y: Union[np.ndarray, pd.DataFrame],
+    y: Union[np.ndarray, pd.DataFrame, pd.Series],
     initial_solution: np.ndarray,
-    max_num_epoch: int = 1000,
+    regressor: object,
+    max_num_epoch: int = 500,
     tolerance: float = 1e-6,
     epsilon: float = 1e-3,
     verbose: bool = False,
@@ -145,11 +176,10 @@ def iwls(
     """
 
     # initialization
-    if isinstance(X, pd.DataFrame):
-        X = X.to_numpy()
-    if isinstance(y, pd.DataFrame) or isinstance(y, pd.Series):
-        y = y.to_numpy().T
+    X, y = transform_data_type_to_np(X, y)
     current_solution = initial_solution
+    loss_after_epoch = [regressor.predict_and_calculate_loss(X, y, current_solution)]
+    starting_time = time.perf_counter()
 
     for epoch in range(max_num_epoch):
         P = sigmoid(X @ current_solution)
@@ -167,25 +197,27 @@ def iwls(
         # maybe propose better stopping criterion here
         gradient = -X.T @ (y - P)
 
+        loss_after_epoch.append(
+            regressor.predict_and_calculate_loss(X, y, current_solution)
+        )
         if verbose:
             print(f"Epoch {epoch}, solution:", current_solution)
             print(f"norm: {np.linalg.norm(gradient, ord=np.inf)}")
             print(f"Gradient: {gradient}")
 
-        if np.linalg.norm(gradient, ord=np.inf) < tolerance:
-            if verbose:
-                print("Early stopping criterion reached.")
-            return current_solution
-    return current_solution
+        if stop_criterion(gradient, tolerance, epoch, starting_time):
+            break
+    return current_solution, loss_after_epoch
 
 
 def sgd(
     X: Union[np.ndarray, pd.DataFrame],
-    y: Union[np.ndarray, pd.DataFrame],
+    y: Union[np.ndarray, pd.DataFrame, pd.Series],
     initial_solution: np.ndarray,
+    regressor: object,
     calculate_gradient: callable,
     learning_rate: float = 0.001,
-    max_num_epoch: int = 1000,
+    max_num_epoch: int = 500,
     tolerance: float = 1e-6,
     verbose: bool = False,
 ):
@@ -207,11 +239,10 @@ def sgd(
     """
 
     # initialization
-    if isinstance(X, pd.DataFrame):
-        X = X.to_numpy()
-    if isinstance(y, pd.DataFrame) or isinstance(y, pd.Series):
-        y = y.to_numpy().T
+    X, y = transform_data_type_to_np(X, y)
     current_solution = initial_solution
+    loss_after_epoch = [regressor.predict_and_calculate_loss(X, y, current_solution)]
+    starting_time = time.perf_counter()
 
     for epoch in range(max_num_epoch):
         N, _ = X.shape
@@ -222,26 +253,28 @@ def sgd(
             gradient = calculate_gradient(X_selected, y_selected, current_solution)
             grad_sum += gradient
             current_solution = current_solution - learning_rate * gradient
+        loss_after_epoch.append(
+            regressor.predict_and_calculate_loss(X, y, current_solution)
+        )
         if verbose:
             print(f"Epoch {epoch}, solution: {current_solution}")
 
         gradient = grad_sum / N
-        if np.linalg.norm(gradient, ord=np.inf) < tolerance:
-            if verbose:
-                print("Early stopping criterion reached.")
-            return current_solution
-    return current_solution
+        if stop_criterion(gradient, tolerance, epoch, starting_time):
+            break
+    return current_solution, loss_after_epoch
 
 
 def adam(
     X: Union[np.ndarray, pd.DataFrame],
-    y: Union[np.ndarray, pd.DataFrame],
+    y: Union[np.ndarray, pd.DataFrame, pd.Series],
     initial_solution: np.ndarray,
+    regressor: object,
     calculate_gradient: callable,
     learning_rate: float = 0.001,
     momentum_decay: float = 0.9,
     squared_gradient_decay: float = 0.99,
-    max_num_epoch: int = 1000,
+    max_num_epoch: int = 500,
     tolerance: float = 1e-6,
     batch_size: int = 32,
     batch_fraction: float = None,
@@ -271,20 +304,15 @@ def adam(
     """
 
     # initialization
-    if isinstance(X, pd.DataFrame):
-        X = X.to_numpy()
-    if isinstance(y, pd.DataFrame) or isinstance(y, pd.Series):
-        y = y.to_numpy().T
+    X, y = transform_data_type_to_np(X, y)
     current_solution = initial_solution
     momentum = np.zeros_like(initial_solution)
     squared_gradients = np.zeros_like(initial_solution)
     counter = 0
+    loss_after_epoch = [regressor.predict_and_calculate_loss(X, y, current_solution)]
+    starting_time = time.perf_counter()
 
-    # set batch size
-    assert isinstance(batch_size, int), "batch_size must be an integer"
-    if batch_fraction is not None:
-        assert 0 < batch_fraction <= 1, "batch_fraction must be between 0 and 1"
-        batch_size = int(X.shape[0] * batch_fraction)
+    batch_size = calculate_batch_size(X, batch_size, batch_fraction)
     iterations = int(X.shape[0] / batch_size)
 
     for epoch in range(max_num_epoch):
@@ -313,12 +341,13 @@ def adam(
             current_solution = current_solution - learning_rate * corrected_momentum / (
                 np.sqrt(corrected_squared_gradients) + epsilon
             )
+        loss_after_epoch.append(
+            regressor.predict_and_calculate_loss(X, y, current_solution)
+        )
         if verbose:
             print(f"Epoch {epoch}, solution:", current_solution)
 
-        if np.linalg.norm(gradient, ord=np.inf) < tolerance:
-            if verbose:
-                print("Early stopping criterion reached.")
-            return current_solution
+        if stop_criterion(gradient, tolerance, epoch, starting_time):
+            break
 
-    return current_solution
+    return current_solution, loss_after_epoch
